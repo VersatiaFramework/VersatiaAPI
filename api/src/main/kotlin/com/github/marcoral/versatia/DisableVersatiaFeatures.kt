@@ -2,6 +2,7 @@ package com.github.marcoral.versatia
 
 import com.github.marcoral.versatia.event.RegisterListeners
 import com.github.marcoral.versatia.resources.ExtractResources
+import com.github.marcoral.versatia.task.RunBackgroundTasks
 import kotlin.reflect.KClass
 
 /**
@@ -26,4 +27,10 @@ annotation class DisableVersatiaFeatures(
     @VersatiaDisabler(ExtractResources::class) val extractResources: Boolean = false,
     /** Leaves the plugin's `Listener`s unregistered; see `@RegisterListeners`. */
     @VersatiaDisabler(RegisterListeners::class) val registerListeners: Boolean = false,
+    /**
+     * Leaves the plugin's `BackgroundTask`s unstarted; an injected `PluginScope` still works but is
+     * then cancelled only when the plugin's beans are closed, after its stop functions. See
+     * `@RunBackgroundTasks`.
+     */
+    @VersatiaDisabler(RunBackgroundTasks::class) val runBackgroundTasks: Boolean = false,
 )

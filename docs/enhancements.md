@@ -61,7 +61,7 @@ annotation class LocalBean
   compiles against VersatiaAPI only, and the processor is in VersatiaCore or in another plugin.
   VersatiaAPI keeps the names of the built-in processors in `BeanProcessors` (`di`),
   `LifecycleProcessors` (`lifecycle`), `ConfigProcessors` (`config`), `ResourceProcessors`
-  (`resources`) and `EventProcessors` (`event`). A mistyped name is found when the plugin enables,
+  (`resources`), `EventProcessors` (`event`) and `TaskProcessors` (`task`). A mistyped name is found when the plugin enables,
   not at compile time.
 - `enhancementPhase` or `enhancementPhaseParamRefName` say when the processor runs; see
   [Phases](#phases).
@@ -109,7 +109,7 @@ walk it. Changing how VersatiaCore iterates therefore never requires regeneratin
 ### Format version
 
 The format has its own `major.minor` version (`VersatiaPluginDescriptor.FORMAT_VERSION`, currently
-`1.3`), independent of the library version. A runtime accepts exactly the version it was built
+`1.4`), independent of the library version. A runtime accepts exactly the version it was built
 with and rejects any other with a message naming the plugin, both versions and the fix. The
 generator writes the two numbers as literal `Int` properties (`formatMajor`, `formatMinor`), so a
 runtime can read them from any descriptor before deciding what to do with it; for the same reason
@@ -392,7 +392,7 @@ Generated for it (shortened):
 
 object VersatiaDescriptor : VersatiaPluginDescriptor {
   override val formatMajor: Int = 1
-  override val formatMinor: Int = 3
+  override val formatMinor: Int = 4
 
   override val elements: List<EnhancedElement>
     get() = listOf(
@@ -409,11 +409,19 @@ object VersatiaDescriptor : VersatiaPluginDescriptor {
       ),
       EnhancedElement(
         processorClass = "com.github.marcoral.versatia.resources.ExtractResourcesEnhancementProcessor",
-        phase = Phase.PLUGIN_START_ONLY,
+        phase = Phase.PLUGIN_RELOAD_OR_START,
         annotation = AnnotationOccurrence("com.github.marcoral.versatia.resources.ExtractResources"),
         target = PluginTarget(/* the same */),
         origin = "com.github.marcoral.versatia.VersatiaPlugin",
       ),
+      EnhancedElement(
+        processorClass = "com.github.marcoral.versatia.task.PluginScopeEnhancementProcessor",
+        phase = Phase.PLUGIN_START_ONLY,
+        annotation = AnnotationOccurrence("com.github.marcoral.versatia.task.RunBackgroundTasks"),
+        target = PluginTarget(/* the same */),
+        origin = "com.github.marcoral.versatia.VersatiaPlugin",
+      ),
+      // ... and the same at Phase.PLUGIN_STOP
       EnhancedElement(
         processorClass = "com.github.marcoral.versatia.di.LocalBeanEnhancementProcessor",
         phase = Phase.PLUGIN_START_ONLY,
@@ -480,6 +488,10 @@ generates nothing when any of them fires:
   with its phase left at `UNSET`;
 - an enhanced function or property carrying more than one enhancement, and an enhanced top-level
   function, which has no owner to call it on;
+- an enhanced function that is an extension, `suspend`, abstract or generic; the `suspend` message
+  names the alternatives: `X.f must not be suspend to be enhanced; implement BackgroundTask for work
+  that runs with the plugin, or launch from an injected PluginScope` (see
+  [Background tasks and coroutines](#background-tasks-and-coroutines));
 - an enhanced property that is a `val` (other than one holding a `PreviousValueTracking`), an
   extension or abstract property, top-level, or declared in a class that is neither the main class,
   an object nor a bean, or whose type the descriptor cannot record; a `@Value` property whose type
@@ -535,6 +547,9 @@ class MyPlugin : VersatiaPlugin() {
   non-generic class types; local beans first, then exposed ones; the plugin instance included).
   Ambiguity is a compile error, an unknown type is left to the runtime.
 - Extension, suspend, abstract and generic functions are rejected. Return values are ignored.
+  A suspend function is rejected because the runtime calls functions inside the event and waits
+  for nothing; the message points to `BackgroundTask` and `PluginScope`, see
+  [Background tasks and coroutines](#background-tasks-and-coroutines).
 - Visibility does not matter: a private function or class gets an `Invoker.Reflective`, a visible
   one a direct call such as `Invoker.Direct { instance, args -> (instance as MyPlugin).start(args[0] as Clock) }`.
 
@@ -625,9 +640,10 @@ class Shop {
 ## Enhancements of the main class
 
 Class enhancements written on the main class, or on any of its supertypes, produce one
-`PluginTarget` element each. `VersatiaPlugin` carries `@PluginBean`, `@ExtractResources` and
-`@RegisterListeners`, which is how every Versatia plugin gets its bean container, its resources and
-its listeners without declaring anything;
+`PluginTarget` element each. `VersatiaPlugin` carries `@PluginBean`, `@ExtractResources`,
+`@RegisterListeners` and `@RunBackgroundTasks`, which is how every Versatia plugin gets its bean
+container, its resources, its listeners, its background tasks and its coroutine scope without
+declaring anything;
 an abstract base plugin in a library can add enhancements for the plugins extending it the same
 way. The `PluginTarget` is the same for all of them: class name, assignable types and attributes,
 nothing to construct. A processor that expects the main class accepts only that target and only
@@ -671,6 +687,10 @@ abstract class AuditedPlugin : VersatiaPlugin()
 The `ksp.SubclassCollector` applies the rules `PluginCollector` found; it knows no feature. A class
 matched by a subclass enhancement that is also a bean produces both elements, so a processor that
 needs the instance should ask the `BeanResolver` first and instantiate only when there is no bean.
+VersatiaCore's subclass processors share what they instantiate per plugin, so a plain class that
+is a `Listener` and a `BackgroundTask` is created once. An annotation may carry a
+`@VersatiaSubclassEnhancement` and `@VersatiaEnhancement`s at once: the first produces an element
+per matching class, the others `PluginTarget` elements, as `@RunBackgroundTasks` does.
 
 ## Event listeners
 
@@ -685,13 +705,60 @@ elements, so listeners are registered before `@AutoInvoke` start functions run. 
 unregisters the listeners when the plugin is disabled. `@DisableVersatiaFeatures(registerListeners = true)`
 switches the feature off.
 
+## Background tasks and coroutines
+
+The `task` package makes work over time a coroutine of the plugin. Its definitions:
+
+- `BackgroundTask`, an interface with `suspend fun run()`: every class of the plugin implementing
+  it runs as long as the plugin, never registered.
+- `PluginScope`, a `CoroutineScope` injected like a bean, with `serverThread` (its dispatcher) and
+  `condition(...)`; VersatiaCore exposes it as a prototype, so each plugin, and each module
+  prototype made for one, receives that plugin's scope.
+- `Condition` (a `StateFlow<Boolean>` with `recheck()`), `RecheckTrigger` built by `recheckOn<E>()`
+  and the subject shorthands of `SubjectTriggers.kt`; `awaitUntil`, `runOnceWhile` and `whenever`
+  consume any `Flow<Boolean>`.
+- `delayTicks`, `delayTick` and the coroutine-bound `condition` (`ServerClock.kt`), `everyTicks`
+  and `every` (`Repetition.kt`), `KeyedJobs` with `CoroutineScope.keyedJobs()`.
+- `ServerClock`, a `CoroutineContext.Element` marked `@VersatiaInternalApi`: the helpers find the
+  tick count, the tick waits, conditions and failure reporting in the calling coroutine's context
+  and fail with `No server clock in this coroutine: ...` outside a Versatia coroutine. VersatiaCore
+  implements it; the API's tests fake it (`VirtualServerClock`).
+
+`@RunBackgroundTasks`, declared on `VersatiaPlugin`, carries three enhancement declarations:
+
+```kotlin
+@VersatiaSubclassEnhancement(TaskProcessors.RUN_BACKGROUND_TASKS, BackgroundTask::class, Phase.PLUGIN_RELOAD_OR_START)
+@VersatiaEnhancement(TaskProcessors.PLUGIN_SCOPE, enhancementPhase = Phase.PLUGIN_START_ONLY)
+@VersatiaEnhancement(TaskProcessors.PLUGIN_SCOPE, enhancementPhase = Phase.PLUGIN_STOP)
+annotation class RunBackgroundTasks
+```
+
+The elements it produces: one `ClassTarget` per class implementing `BackgroundTask` (validated
+like a bean; an object gets an object instantiator), or the `PluginTarget` when the main class is
+one, for `RunBackgroundTasksEnhancementProcessor` at `PLUGIN_RELOAD_OR_START`; and two
+`PluginTarget` elements for `PluginScopeEnhancementProcessor`, at `PLUGIN_START_ONLY` and
+`PLUGIN_STOP`, in every plugin. The first processor launches every task at start and cancels and
+launches it again at every reload once the values are set; the second resolves the plugin's scope
+at start and, at stop, cancels and awaits every coroutine of the plugin before the stop functions
+run, an order the closing of the beans, which comes after them, could not give. A `@Value` on a
+plain task class is the usual error (`... is neither the plugin's main class, an object nor a
+bean`), and `@ConditionalOnPlugin` on a task class is recorded on its `ClassTarget` like on a
+listener. `@DisableVersatiaFeatures(runBackgroundTasks = true)` removes all three kinds of element:
+tasks are not run, and an injected scope is then cancelled only when the bean session closes it.
+
+There is no invoker for suspend functions. An `@AutoInvoke` function runs inside the lifecycle
+event, which cannot wait for a coroutine, and a suspend function there would only hide a launch
+whose lifetime nobody owns; `FunctionCollector` therefore rejects it and names the two ways that
+own one: `BackgroundTask` for work bound to the plugin, a launch from an injected `PluginScope` for
+work something starts. How VersatiaCore runs all this is in its `docs/runtime.md`.
+
 ## Plugin resources
 
 `@ExtractResources` (`resources`), declared on `VersatiaPlugin`, copies every file under the
 `resources` directory of the plugin's JAR (`src/main/resources/resources/` in the build) into the
-plugin's data folder at `PLUGIN_START_ONLY`, keeping the layout below that directory. A file that
-already exists is never replaced, so edits made on the server survive an update; deleting a file
-and restarting the plugin restores it. The processor runs immediately, before the beans are
+plugin's data folder at `PLUGIN_RELOAD_OR_START`, keeping the layout below that directory. A file
+that already exists is never replaced, so edits made on the server survive an update; deleting a
+file and reloading or restarting the plugin restores it. The processor runs immediately, before the beans are
 created, so a bean may read the files in its constructor. The directory name is fixed
 (`ExtractResources.DIRECTORY`); other files in `src/main/resources`, such as `plugin.yml`, stay in
 the JAR. The processor is `ExtractResourcesEnhancementProcessor` (`ResourceProcessors.EXTRACT`) in
@@ -766,7 +833,9 @@ The plugin's main class extends `VersatiaPlugin` and `plugin.yml` lists `Versati
 loads each plugin's libraries into a separate class loader, so a plugin with its own copy of Kotlin
 would exchange `kotlin.jvm.functions.Function1` instances with VersatiaCore across two different
 `Function1` classes, and the JVM rejects that with a `LinkageError`. VersatiaCore is the single
-provider of the Kotlin runtime; dependents reach it through `depend:`.
+provider of the Kotlin runtime; dependents reach it through `depend:`. The same holds for
+`kotlinx-coroutines`, which VersatiaAPI exports at VersatiaCore's version: a plugin neither lists
+nor shades it (see [build.md](build.md#api-exported-dependencies)).
 
 ## How the `ksp` module works
 

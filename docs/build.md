@@ -14,8 +14,8 @@ build scripts and what each module exports to projects that depend on it.
 The root project only declares the Kotlin plugin (`apply false`) and the shared repositories
 (`dependencyResolutionManagement` in `settings.gradle.kts`). The framework version is
 `versatiaVersion` in `gradle.properties`; every third-party version (Kotlin, KSP, KotlinPoet,
-kctfork, Paper API, CommandAPI, SnakeYAML) lives in `gradle/libs.versions.toml`, which this build
-uses as its own `libs` catalog.
+kctfork, Paper API, CommandAPI, SnakeYAML, kotlinx.coroutines) lives in `gradle/libs.versions.toml`,
+which this build uses as its own `libs` catalog.
 
 ## `catalog`: the shared version catalog
 
@@ -73,6 +73,17 @@ The `java-library` plugin provides dependency scopes that control what consumers
   both come from VersatiaCore, which lists them under `libraries:`; a plugin must not list them
   itself, or it exchanges Kotlin classes with VersatiaCore across two copies; see
   [api.md](api.md#runtime-requirement).
+- `kotlinx-coroutines-core` is `api` as well, with a **strict** version (`strictly`, the catalog's
+  `coroutines`), and a constraint pins `kotlinx-coroutines-core-jvm` the same way. The `task`
+  package exposes `kotlinx.coroutines` types (`CoroutineScope`, `StateFlow`, `Job`), and its inline
+  functions compile references to kotlinx internals into the plugin, so a plugin must compile
+  against exactly the version it runs with: a dependency asking for another version fails the
+  build instead of being resolved upwards. On the server the classes come from VersatiaCore, which
+  lists `kotlinx-coroutines-core-jvm` at the same catalog version under `libraries:` (Paper's
+  resolver reads POMs only, so the JVM artifact is named rather than the multiplatform one). It is
+  the only plugin that lists it: a plugin or module listing or shading `kotlinx-coroutines`, or a
+  library such as MCCoroutine, brings a second copy and fails with a `LinkageError` or a
+  `ClassCastException`. Bumping `coroutines` therefore needs a new VersatiaCore.
 
 Anything the public API exposes in signatures must be `api` or `compileOnlyApi`. Internal
 dependencies stay `implementation`.
@@ -97,8 +108,9 @@ Both modules use `kotlin("test")`, which resolves to `kotlin-test-junit5` becaus
 uses `useJUnitPlatform()`. `junit-platform-launcher` is declared as `testRuntimeOnly`; Gradle 9 no
 longer adds it automatically.
 
-- `api`: `paper-api` is added as `testImplementation` so tests can use `YamlConfiguration` and
-  other server-independent Bukkit classes at runtime. It stays `compileOnlyApi` for consumers, so a
+- `api`: `kotlinx-coroutines-test` (catalog `kotlinx-coroutines-test`, the same `coroutines`
+  version) runs the `task` helpers in virtual time. `paper-api` is added as `testImplementation`
+  so tests can use `YamlConfiguration` and other server-independent Bukkit classes at runtime. It stays `compileOnlyApi` for consumers, so a
   plugin's own unit tests compile against it but fail with `NoClassDefFoundError` until the plugin
   build adds `testImplementation("io.papermc.paper:paper-api:...")` as well.
 - `ksp`: `dev.zacsweers.kctfork:ksp` (a maintained fork of `kotlin-compile-testing`) compiles

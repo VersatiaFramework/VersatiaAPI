@@ -37,7 +37,10 @@ defines what is generated, VersatiaCore must be able to read it.
 ## Features built on this mechanism
 
 - Automatic listener registration.
-- Automatic scheduling of recurring and delayed tasks.
+- Tasks as coroutines: every `BackgroundTask` of a plugin runs from the tick after its start and is
+  restarted by every reload, and an injected `PluginScope` runs a plugin's own coroutines on the
+  server thread until it stops; both are driven by one timer in VersatiaCore. See
+  [enhancements.md](enhancements.md#background-tasks-and-coroutines).
 - Dependency injection driven entirely by the generated descriptor.
 - Resource unpacking and other setup that today is repeated in every plugin's `onEnable`.
 

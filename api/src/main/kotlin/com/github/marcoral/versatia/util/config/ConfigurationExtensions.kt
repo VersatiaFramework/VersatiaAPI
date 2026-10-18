@@ -4,6 +4,7 @@ import com.github.marcoral.versatia.util.lang.asEnumIgnoreCase
 import com.github.marcoral.versatia.util.type.Percent
 import java.math.BigInteger
 import kotlin.enums.enumEntries
+import kotlin.time.Duration
 import org.bukkit.Color
 import org.bukkit.Location
 import org.bukkit.OfflinePlayer
@@ -104,6 +105,17 @@ fun ConfigurationSection.isPercent(key: String) = get(key)?.let { asPercent(it) 
 inline fun ConfigurationSection.ifPercentPresent(key: String, action: (Percent) -> Unit) { getPercentOrNull(key)?.let(action) }
 fun ConfigurationSection.getPercentList(key: String) = listOrNull(key, PERCENT_EXPECTED) { asPercent(it) }.orEmpty()
 
+/* DURATION (Kotlin notation such as "5m", "1h 30m", "500ms", or ISO-8601 such as "PT5M") */
+
+private const val DURATION_EXPECTED = "a duration such as \"30s\", \"5m\" or \"1h 30m\" (units d, h, m, s, ms)"
+
+fun ConfigurationSection.getDurationOrNull(key: String) = valueOrNull(key, DURATION_EXPECTED) { asDuration(it) }
+fun ConfigurationSection.getDuration(key: String, def: Duration) = getDurationOrNull(key) ?: def
+fun ConfigurationSection.getDurationOrThrow(key: String, exceptionMessage: String? = null) = requireValue(key, DURATION_EXPECTED, exceptionMessage) { asDuration(it) }
+fun ConfigurationSection.isDuration(key: String) = get(key)?.let { asDuration(it) } != null
+inline fun ConfigurationSection.ifDurationPresent(key: String, action: (Duration) -> Unit) { getDurationOrNull(key)?.let(action) }
+fun ConfigurationSection.getDurationList(key: String) = listOrNull(key, DURATION_EXPECTED) { asDuration(it) }.orEmpty()
+
 /* ENUMS (matched by name, ignoring case) */
 
 inline fun <reified T : Enum<T>> ConfigurationSection.getEnumElementOrNull(key: String) =
@@ -198,3 +210,5 @@ private fun asULong(raw: Any) = when (raw) {
 }
 
 private fun asPercent(raw: Any) = asString(raw)?.let(Percent::parseOrNull)
+
+private fun asDuration(raw: Any) = asString(raw)?.let(Duration::parseOrNull)

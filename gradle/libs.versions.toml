@@ -7,6 +7,8 @@ kctfork = "0.14.0"
 paper = "1.21.4-R0.1-SNAPSHOT"
 commandapi = "12.1.0"
 snakeyaml = "2.4"
+# Exported by VersatiaAPI and loaded on the server from VersatiaCore's libraries: (see docs/build.md)
+coroutines = "1.11.0"
 
 [libraries]
 paper-api = { module = "io.papermc.paper:paper-api", version.ref = "paper" }
@@ -17,6 +19,9 @@ kctfork-ksp = { module = "dev.zacsweers.kctfork:ksp", version.ref = "kctfork" }
 commandapi-paper-core = { module = "dev.jorel:commandapi-paper-core", version.ref = "commandapi" }
 commandapi-kotlin-paper = { module = "dev.jorel:commandapi-kotlin-paper", version.ref = "commandapi" }
 snakeyaml = { module = "org.yaml:snakeyaml", version.ref = "snakeyaml" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
+kotlinx-coroutines-core-jvm = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm", version.ref = "coroutines" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 # Version aligned by the JUnit BOM that kotlin("test") brings
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
 

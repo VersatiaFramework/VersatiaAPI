@@ -1,5 +1,16 @@
 package com.github.marcoral.versatia.util.collection
 
+/**
+ * An endless iterator going round this list: its elements in order, then from the first again,
+ * such as lines broadcast in turn. The list is copied, so later changes to it are not seen; an
+ * empty list is an error, since there would be nothing to go round.
+ */
+fun <T> List<T>.cycle(): Iterator<T> {
+    require(isNotEmpty()) { "Cannot cycle through an empty list" }
+    val elements = toList()
+    return generateSequence(0) { (it + 1) % elements.size }.map(elements::get).iterator()
+}
+
 fun <T> MutableSet<T>.addOrThrow(
     element: T,
     exceptionGenerator: () -> Throwable = { IllegalStateException("Element \"$element\" is already in the set") },

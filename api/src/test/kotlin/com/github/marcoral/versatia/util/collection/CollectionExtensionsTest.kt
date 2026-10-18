@@ -6,6 +6,15 @@ import kotlin.test.assertFailsWith
 
 class CollectionExtensionsTest {
     @Test
+    fun `cycle goes round the list endlessly and ignores later changes`() {
+        val lines = mutableListOf("a", "b", "c")
+        val rotation = lines.cycle()
+        lines += "d"
+        assertEquals(listOf("a", "b", "c", "a", "b", "c", "a"), List(7) { rotation.next() })
+        assertEquals("Cannot cycle through an empty list", assertFailsWith<IllegalArgumentException> { emptyList<String>().cycle() }.message)
+    }
+
+    @Test
     fun `addOrThrow rejects existing elements`() {
         val set = mutableSetOf(1)
         set.addOrThrow(2)

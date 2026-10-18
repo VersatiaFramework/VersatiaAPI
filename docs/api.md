@@ -25,6 +25,7 @@ that deliver no feature of their own but are needed for the framework to work.
 | `config`                 | `@Value`, properties set from the plugin's YAML files at start and reload; `ValueTypes`, the types it reads by itself; `ValueMapper` and `NoMapper` for any other, `SectionMapper` for one written as a section; `PreviousValueTracking`, a cell keeping the value it replaced; `ConfigProcessors` |
 | `resources`              | `@ExtractResources`, files shipped in the JAR extracted to the data folder; `ResourceProcessors` |
 | `event`                  | `@RegisterListeners`, Bukkit listeners registered at start; `EventProcessors` |
+| `task`                   | Coroutines of a plugin: `BackgroundTask`, run as long as the plugin, and `@RunBackgroundTasks`; `PluginScope`, injected; `Condition`, `RecheckTrigger`, `recheckOn` and its subject shorthands (`SubjectTriggers.kt`); `delayTicks`, `delayTick`, `condition` (`ServerClock.kt`); `everyTicks`, `every` (`Repetition.kt`); `awaitUntil`, `runOnceWhile`, `whenever` (`Conditions.kt`); `KeyedJobs` and `keyedJobs()`; `ServerClock` and `TaskProcessors` (both internal plumbing) |
 | `util.*`                 | Independent helpers, described below                                      |
 
 The framework packages are documented in [enhancements.md](enhancements.md). All helpers live
@@ -33,8 +34,8 @@ by the kind of helper they are. Package names below are relative to `util`.
 
 | Package        | Contents                                                                                 |
 |----------------|------------------------------------------------------------------------------------------|
-| `collection`   | `addOrThrow`/`putAllOrThrow`-style helpers for sets and maps, `DeepMergeMap`              |
-| `config`       | Strict typed getters for `ConfigurationSection`, YAML file traversal                     |
+| `collection`   | `addOrThrow`/`putAllOrThrow`-style helpers for sets and maps, `DeepMergeMap`, `List.cycle()` (an endless iterator over a copy of the list) |
+| `config`       | Strict typed getters for `ConfigurationSection`, `kotlin.time.Duration` included, YAML file traversal |
 | `inventory`    | `ItemStack`/`Inventory` helpers, `PlayerInventory` indices of the equipment slots         |
 | `lang`         | Enum lookups ignoring case                                                                |
 | `plugin`       | `Plugin.log`, `logWarning`, `logSevere` shorthands over the plugin logger                 |
@@ -43,7 +44,7 @@ by the kind of helper they are. Package names below are relative to `util`.
 | `text`         | Subscript/superscript digits                                                             |
 | `type`         | Small value type `Percent`                                                                |
 | `validation`   | `validateAtLeast`-style guards that return the receiver                                   |
-| `world`        | `Location` helpers                                                                        |
+| `world`        | `Location` helpers, `Location.isWithin(distance, other)` among them                       |
 
 Files are named `<Subject>Extensions.kt` when they hold extension functions and after the type
 when they hold a class. `util` holds helpers on objects a caller holds and pure functions; it never
@@ -58,7 +59,8 @@ compiler warning saying it is internal plumbing that may change without notice:
 
 | Declaration                                                         | Used by                                   |
 |---------------------------------------------------------------------|-------------------------------------------|
-| `BeanProcessors`, `LifecycleProcessors`, `ConfigProcessors`, `ResourceProcessors`, `EventProcessors` | the annotations declaring the built-in enhancements, the `ksp` module, VersatiaCore |
+| `BeanProcessors`, `LifecycleProcessors`, `ConfigProcessors`, `ResourceProcessors`, `EventProcessors`, `TaskProcessors` | the annotations declaring the built-in enhancements, the `ksp` module, VersatiaCore |
+| `ServerClock`                                                       | the `task` helpers, which find it in a coroutine's context; VersatiaCore implements it, tests fake it |
 | `ValueTypes`                                                        | the `@Value` checks in `ksp` and the value processor |
 | `VersatiaPluginDescriptor`, `DescriptorVersion`                     | the generated descriptor, the descriptor loader |
 | `Instantiator.Direct`/`Reflective`/`WithDefaults`/`ObjectInstance`, `Invoker.Direct`/`Reflective`, `Setter.Direct`/`Reflective` | the generated descriptor; processors call `create`, `invoke` and `set` on the interfaces |
@@ -122,7 +124,9 @@ whole range (`UInt` up to 4294967295, `ULong` up to 18446744073709551615) and re
 instead of wrapping them, float getters reject a finite number that overflows a float instead of
 returning infinity, string getters accept any single value (`5` reads as `"5"`) but reject a section
 or a list instead of printing it, `getPercent*` requires a trailing `%`, enum getters match the
-constant name ignoring case and list up to twenty allowed names in the error. The enum getters exist
+constant name ignoring case and list up to twenty allowed names in the error, `getDuration*` read
+`Duration.parseOrNull` of the value's text, so Kotlin's notation (`30s`, `1h 30m`, `500ms`, `2d`)
+or ISO-8601 (`PT5M`), and reject a bare number, which names no unit. The enum getters exist
 twice: reified for a type known at compile time and with a `Class<out Enum<*>>` parameter for the
 value processor, which knows the enum only by name.
 
@@ -167,6 +171,18 @@ Linux; callers that report a file by name or parse it themselves start from it.
 `Plugin.forEachYamlFile(relativePath) { path, config -> }` and `Plugin.mapYamlFiles` walk a
 directory under the plugin's data folder in that order and load every file with
 `loadYamlOrThrow`.
+
+`Duration` has the same families as `Percent`: `getDurationOrNull`, `getDuration(key, def)`,
+`getDurationOrThrow`, `isDuration`, `ifDurationPresent` and `getDurationList`.
+
+## `cycle` and `isWithin`
+
+`List.cycle()` copies the list and returns an endless iterator over the copy, from the first
+element again after the last, so later changes to the list are not seen; an empty list is an
+`IllegalArgumentException` (`Cannot cycle through an empty list`). `Location.isWithin(distance,
+other)` compares squared distances, the boundary included, and is `false` rather than an exception
+when the worlds differ or either location has none; it throws, like every world access, when a
+world has been unloaded.
 
 ## `DeepMergeMap` (`util.collection`)
 
@@ -245,7 +261,10 @@ The `util.reflect` package needs `kotlin-reflect` on the server. VersatiaCore li
 ## Tests
 
 Pure-Kotlin code, the configuration getters and the YAML file helpers are covered by unit tests
-under `api/src/test/kotlin` (`./gradlew test`). `paper-api` is on the test runtime classpath, which
+under `api/src/test/kotlin` (`./gradlew test`). The `task` helpers run under `kotlinx-coroutines-test`
+with `VirtualServerClock`, a `ServerClock` over the test scheduler's virtual time: ticks, the
+repeating helpers, the condition helpers, `KeyedJobs` and the subject shorthands; the loop, the
+dispatcher and the conditions of a real scope are VersatiaCore's and tested there. `paper-api` is on the test runtime classpath, which
 is enough to run `YamlConfiguration` without a server; of the Bukkit types, `Color` and `Vector`
 are read back in tests, while `ItemStack`, `Location` and `OfflinePlayer` are tested only for their
 error messages, because reading them needs a server. Anything that needs a live `Bukkit.getServer()` (scheduler,

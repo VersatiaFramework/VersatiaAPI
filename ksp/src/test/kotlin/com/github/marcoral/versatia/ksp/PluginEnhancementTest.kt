@@ -8,6 +8,7 @@ import com.github.marcoral.versatia.engine.descriptor.Instantiator
 import com.github.marcoral.versatia.engine.descriptor.Parameter
 import com.github.marcoral.versatia.engine.descriptor.PluginTarget
 import com.github.marcoral.versatia.resources.ResourceProcessors
+import com.github.marcoral.versatia.task.TaskProcessors
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
 import kotlin.test.Test
@@ -73,7 +74,7 @@ class PluginEnhancementTest : ProcessorTest() {
         )
 
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
-        assertEquals(listOf(BeanProcessors.PLUGIN), result.descriptor().elements.map { it.processorClass })
+        assertEquals(listOf(BeanProcessors.PLUGIN, TaskProcessors.PLUGIN_SCOPE, TaskProcessors.PLUGIN_SCOPE), result.descriptor().elements.map { it.processorClass })
     }
 
     @Test

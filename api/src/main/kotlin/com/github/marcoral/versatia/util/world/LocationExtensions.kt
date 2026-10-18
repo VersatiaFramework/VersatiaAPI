@@ -12,6 +12,13 @@ fun Location.getCircleAround(radius: Double, points: Int = 100) = List(points) {
     Location(world, x + radius * cos(angle), y, z + radius * sin(angle))
 }
 
+/**
+ * Whether [other] is in this location's world and at most [distance] blocks away; false, not an
+ * exception, when the worlds differ or either is not set. Throws, like every world access, when a
+ * world has been unloaded.
+ */
+fun Location.isWithin(distance: Double, other: Location) = world != null && world == other.world && distanceSquared(other) <= distance * distance
+
 /** Spawns a particle at this location; does nothing when its world is not set or no longer loaded. [data] is of the particle's `dataType`. */
 fun Location.spawnParticle(
     particle: Particle,

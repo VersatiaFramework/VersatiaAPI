@@ -5,6 +5,7 @@ import com.github.marcoral.versatia.VersatiaEnhancement
 import com.github.marcoral.versatia.VersatiaInternalApi
 import com.github.marcoral.versatia.util.type.Percent
 import kotlin.reflect.KClass
+import kotlin.time.Duration
 
 /**
  * Sets the annotated property from a YAML file in the plugin's data folder: the value at [key],
@@ -50,7 +51,7 @@ object ConfigProcessors {
 object ValueTypes {
     /** Read with the strict getters, as single values, as the values of maps and, through the strict list getters, as the elements of lists and sets. */
     val SCALARS = setOf(
-        Boolean::class, Int::class, Long::class, Float::class, Double::class, UInt::class, ULong::class, String::class, Percent::class,
+        Boolean::class, Int::class, Long::class, Float::class, Double::class, UInt::class, ULong::class, String::class, Percent::class, Duration::class,
     ).map { it.qualifiedName!! }.toSet()
 
     /** Read with the Bukkit deserialisers, as single values only. Names, not classes: the compile-time step has no Paper API. */

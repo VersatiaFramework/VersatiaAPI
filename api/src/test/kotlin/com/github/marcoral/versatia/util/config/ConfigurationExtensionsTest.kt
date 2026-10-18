@@ -7,6 +7,10 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.days
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 import org.bukkit.Color
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.util.Vector
@@ -83,6 +87,31 @@ class ConfigurationExtensionsTest {
         assertTrue(config.isPercent("chance"))
         assertFalse(config.isPercent("badChance"))
         assertEquals(Percent.ZERO, config.getPercent("missing", Percent.ZERO))
+    }
+
+    @Test
+    fun `durations use the Kotlin notation or ISO-8601`() {
+        val durations = YamlConfiguration().apply {
+            loadFromString(
+                """
+                short: 30s
+                combined: 1h 30m
+                iso: PT5M
+                plain: 300
+                words: 5 minutes
+                list: [500ms, 2d]
+                """.trimIndent(),
+            )
+        }
+        assertEquals(30.seconds, durations.getDurationOrThrow("short"))
+        assertEquals(90.minutes, durations.getDurationOrThrow("combined"))
+        assertEquals(5.minutes, durations.getDurationOrNull("iso"))
+        assertEquals(listOf(500.milliseconds, 2.days), durations.getDurationList("list"))
+        assertFailsWith<ConfigurationValueException> { durations.getDurationOrNull("plain") }
+        val failure = assertFailsWith<ConfigurationValueException> { durations.getDurationOrThrow("words") }
+        assertTrue("a duration such as \"30s\", \"5m\" or \"1h 30m\"" in failure.message.orEmpty(), failure.message)
+        assertFalse(durations.isDuration("plain"))
+        assertEquals(1.seconds, durations.getDuration("missing", 1.seconds))
     }
 
     @Test

@@ -18,8 +18,14 @@ dependencies {
     compileOnlyApi(libs.paper.api)
     api(kotlin("stdlib"))
     api(kotlin("reflect"))
+    // Exported like kotlin-stdlib and pinned: plugins run against VersatiaCore's copy, and inline functions compile references to its internals; see docs/build.md
+    api(libs.kotlinx.coroutines.core) { version { strictly(libs.versions.coroutines.get()) } }
+    constraints {
+        api(libs.kotlinx.coroutines.core.jvm) { version { strictly(libs.versions.coroutines.get()) } }
+    }
 
     testImplementation(kotlin("test"))
+    testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.paper.api)
     testRuntimeOnly(libs.junit.platform.launcher)
 }

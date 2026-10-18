@@ -56,7 +56,7 @@ internal class FunctionCollector(
         val ownerKind = clazz.memberOwner(owners) ?: return reporter.fail(function, "$name cannot be enhanced: ${clazz.notAnOwner()}")
         when {
             function.extensionReceiver != null -> return reporter.fail(function, "$name must not be an extension function to be enhanced")
-            Modifier.SUSPEND in function.modifiers -> return reporter.fail(function, "$name must not be suspend to be enhanced")
+            Modifier.SUSPEND in function.modifiers -> return reporter.fail(function, "$name must not be suspend to be enhanced; implement BackgroundTask for work that runs with the plugin, or launch from an injected PluginScope")
             Modifier.ABSTRACT in function.modifiers -> return reporter.fail(function, "$name must not be abstract to be enhanced")
             function.typeParameters.isNotEmpty() -> return reporter.fail(function, "$name must not have type parameters to be enhanced")
         }

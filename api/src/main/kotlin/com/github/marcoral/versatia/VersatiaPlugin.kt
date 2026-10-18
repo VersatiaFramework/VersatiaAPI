@@ -3,6 +3,7 @@ package com.github.marcoral.versatia
 import com.github.marcoral.versatia.di.PluginBean
 import com.github.marcoral.versatia.event.RegisterListeners
 import com.github.marcoral.versatia.resources.ExtractResources
+import com.github.marcoral.versatia.task.RunBackgroundTasks
 import org.bukkit.plugin.java.JavaPlugin
 
 /**
@@ -13,6 +14,7 @@ import org.bukkit.plugin.java.JavaPlugin
 @PluginBean
 @ExtractResources
 @RegisterListeners
+@RunBackgroundTasks
 abstract class VersatiaPlugin : JavaPlugin() {
     /** Runs this plugin's reload-phase enhancements, and then those of the plugins using its beans, as `/versatia reload <name>` does. */
     fun versatiaReload() = VersatiaEngine.instance.reload(this)
