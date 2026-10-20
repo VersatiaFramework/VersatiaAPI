@@ -46,7 +46,8 @@ fun EnhancementContext.failure(message: String, cause: Throwable? = null) = Enha
 /**
  * The instance [target] is called or set on, by its owner: the plugin being enhanced, the
  * instance of a Kotlin `object`, or the plugin's bean of the declaring class; fails when that
- * class cannot be loaded, is not an `object` or has no bean.
+ * class cannot be loaded, is not an `object` or has no bean, and for a class a subclass
+ * enhancement creates, whose instance only the runtime holds.
  */
 fun EnhancementContext.receiverOf(target: MemberTarget): Any {
     val purpose = when (target) {
@@ -62,6 +63,7 @@ fun EnhancementContext.receiverOf(target: MemberTarget): Any {
         } ?: throw failure("${target.className} is not a Kotlin object, so there is no instance to $purpose")
         MemberOwner.INSTANCE -> state[BeanResolver.KEY]?.instanceOf(target.className)
             ?: throw failure("no bean ${target.className} exists to $purpose")
+        MemberOwner.SUBCLASS_INSTANCE -> throw failure("${target.className} is created by a subclass enhancement, which alone holds its instance, so there is none here to $purpose")
     }
 }
 

@@ -173,7 +173,7 @@ class ConstructorParameterTest : ProcessorTest() {
         assertContains(result.messages, "Shop.plain must be a var to be enhanced; declare the constructor parameter as a property")
         assertContains(result.messages, "@Value on Shop.date: Date is not a supported type")
         assertContains(result.messages, "Parameter count of Shop.start() cannot be enhanced; only properties can, constructor properties included")
-        assertContains(result.messages, "Loose.loose cannot be enhanced: Loose is neither the plugin's main class, an object nor a bean")
+        assertContains(result.messages, "Loose.loose cannot be enhanced: Loose is neither the plugin's main class, an object, a bean nor a class a subclass enhancement creates")
     }
 
     @Test

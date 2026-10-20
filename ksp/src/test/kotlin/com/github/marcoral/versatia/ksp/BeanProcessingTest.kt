@@ -673,6 +673,84 @@ class BeanProcessingTest : ProcessorTest() {
     }
 
     @Test
+    fun `leaves the beans every plugin has to VersatiaCore and records them as plain parameters`() {
+        val result = compile(
+            SourceFile.kotlin(
+                "Shop.kt",
+                """
+                package com.example.alpha
+
+                import com.github.marcoral.versatia.PluginRegistry
+                import com.github.marcoral.versatia.Phase
+                import com.github.marcoral.versatia.di.ExposePrototype
+                import com.github.marcoral.versatia.di.LocalBean
+                import com.github.marcoral.versatia.lifecycle.AutoInvoke
+                import com.github.marcoral.versatia.task.PluginScope
+                import java.util.logging.Logger
+                import net.kyori.adventure.text.logger.slf4j.ComponentLogger
+
+                @LocalBean
+                class Shop(private val logger: Logger) {
+                    fun open() = logger.info("Shop open")
+                }
+
+                @ExposePrototype
+                class Greeter(val logger: Logger, val componentLogger: ComponentLogger, val scope: PluginScope, val registry: PluginRegistry)
+
+                object Startup {
+                    @AutoInvoke(Phase.PLUGIN_START_ONLY)
+                    fun ready(shop: Shop, logger: Logger) {
+                        logger.info("ready")
+                        shop.open()
+                    }
+                }
+                """,
+            ),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
+        val targets = result.descriptor().classTargets()
+        assertEquals(listOf(Parameter("java.util.logging.Logger")), targets.getValue("com.example.alpha.Shop").constructorParameters)
+        assertEquals(
+            listOf(
+                "java.util.logging.Logger",
+                "net.kyori.adventure.text.logger.slf4j.ComponentLogger",
+                "com.github.marcoral.versatia.task.PluginScope",
+                "com.github.marcoral.versatia.PluginRegistry",
+            ).map(::Parameter),
+            targets.getValue("com.example.alpha.Greeter").constructorParameters,
+        )
+    }
+
+    @Test
+    fun `a local Logger bean takes the place of the default one under the usual rules`() {
+        fun loggers(extra: String) = compile(
+            SourceFile.kotlin(
+                "Loggers.kt",
+                """
+                package com.example.alpha
+
+                import com.github.marcoral.versatia.di.LocalBean
+                import java.util.logging.Logger
+
+                @LocalBean
+                class AuditLogger : Logger("audit", null)
+
+                $extra
+
+                @LocalBean
+                class Shop(val logger: Logger)
+                """,
+            ),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.OK, loggers("").exitCode, "a single local provider wins over the exposed ones")
+        val ambiguous = loggers("@LocalBean class ChatLogger : Logger(\"chat\", null)")
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, ambiguous.exitCode)
+        assertContains(ambiguous.messages, "Dependency java.util.logging.Logger of com.example.alpha.Shop is ambiguous; candidates: \"auditLogger\" (com.example.alpha.AuditLogger), \"chatLogger\" (com.example.alpha.ChatLogger)")
+    }
+
+    @Test
     fun `reports a broken scope once, at the class using it when the scope is compiled`() {
         val result = compile(
             SourceFile.kotlin(

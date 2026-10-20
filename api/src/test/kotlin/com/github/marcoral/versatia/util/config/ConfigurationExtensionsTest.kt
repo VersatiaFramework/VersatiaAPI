@@ -7,6 +7,7 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
@@ -112,6 +113,26 @@ class ConfigurationExtensionsTest {
         assertTrue("a duration such as \"30s\", \"5m\" or \"1h 30m\"" in failure.message.orEmpty(), failure.message)
         assertFalse(durations.isDuration("plain"))
         assertEquals(1.seconds, durations.getDuration("missing", 1.seconds))
+    }
+
+    @Test
+    fun `negative and infinite durations are rejected`() {
+        val durations = YamlConfiguration().apply {
+            loadFromString(
+                """
+                negative: -5s
+                infinite: Infinity
+                zero: 0s
+                list: [1s, -1s]
+                """.trimIndent(),
+            )
+        }
+        val failure = assertFailsWith<ConfigurationValueException> { durations.getDurationOrThrow("negative") }
+        assertTrue("must not be negative" in failure.message.orEmpty(), failure.message)
+        assertFailsWith<ConfigurationValueException> { durations.getDurationOrNull("infinite") }
+        assertFailsWith<ConfigurationValueException> { durations.getDurationList("list") }
+        assertFalse(durations.isDuration("negative"))
+        assertEquals(Duration.ZERO, durations.getDurationOrThrow("zero"))
     }
 
     @Test

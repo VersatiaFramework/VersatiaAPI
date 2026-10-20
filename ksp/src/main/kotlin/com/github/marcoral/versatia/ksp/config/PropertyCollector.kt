@@ -30,10 +30,11 @@ import com.squareup.kotlinpoet.ksp.toClassName
 /**
  * Finds every property annotated with an enhancement (an annotation that inherits
  * `@VersatiaEnhancement`) and checks that the runtime will be able to set it: a `var` of the
- * plugin's main class, an `object` or a bean, or a `val` holding a `PreviousValueTracking`, whose
- * cell is set instead. A `@Value` property must also name a usable key and file and have a type
+ * plugin's main class, an `object` or a bean (for `@Value`, also of a class a subclass enhancement
+ * creates, such as a plain `Listener`), or a `val` holding a `PreviousValueTracking`, whose cell
+ * is set instead. A `@Value` property must also name a usable key and file and have a type
  * the runtime can read, by itself or through its mapper; see [ValueTypeCheck]. A property declared
- * in the primary constructor of a bean records that constructor parameter, which the runtime
+ * in the primary constructor of a bean or of such a class records that constructor parameter, which the runtime
  * passes the value to.
  */
 internal class PropertyCollector(
@@ -79,9 +80,9 @@ internal class PropertyCollector(
             return reporter.fail(property, "$name overrides ${it.displayName()}, which is enhanced too, so the override would run for both; keep the enhancement on one of them")
         }
 
-        val ownerKind = clazz.memberOwner(owners) ?: return reporter.fail(property, "$name cannot be enhanced: ${clazz.notAnOwner()}")
-        val type = property.type.resolve().expanded()
         val isValue = single.chain.any { it.declaration.qualifiedName?.asString() == valueAnnotation }
+        val ownerKind = clazz.memberOwner(owners, isValue) ?: return reporter.fail(property, "$name cannot be enhanced: ${clazz.notAnOwner(owners, isValue)}")
+        val type = property.type.resolve().expanded()
         val tracked = isValue && ValueTypeCheck.isTracked(type)
         when {
             !property.isMutable && !tracked -> return reporter.fail(property, "$name must be a var to be enhanced")
@@ -104,7 +105,7 @@ internal class PropertyCollector(
             node = property,
             classAnnotations = attributes.of(clazz, property),
             via = if (tracked) TRACKED_CELL else null,
-            constructorParameter = if (ownerKind == MemberOwner.INSTANCE) clazz.constructorIndexOf(property) else null,
+            constructorParameter = if (ownerKind == MemberOwner.INSTANCE || ownerKind == MemberOwner.SUBCLASS_INSTANCE) clazz.constructorIndexOf(property) else null,
         )
     }
 

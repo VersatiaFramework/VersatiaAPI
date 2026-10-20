@@ -107,7 +107,7 @@ fun ConfigurationSection.getPercentList(key: String) = listOrNull(key, PERCENT_E
 
 /* DURATION (Kotlin notation such as "5m", "1h 30m", "500ms", or ISO-8601 such as "PT5M") */
 
-private const val DURATION_EXPECTED = "a duration such as \"30s\", \"5m\" or \"1h 30m\" (units d, h, m, s, ms)"
+private const val DURATION_EXPECTED = "a duration such as \"30s\", \"5m\" or \"1h 30m\" (units d, h, m, s, ms; must not be negative)"
 
 fun ConfigurationSection.getDurationOrNull(key: String) = valueOrNull(key, DURATION_EXPECTED) { asDuration(it) }
 fun ConfigurationSection.getDuration(key: String, def: Duration) = getDurationOrNull(key) ?: def
@@ -211,4 +211,5 @@ private fun asULong(raw: Any) = when (raw) {
 
 private fun asPercent(raw: Any) = asString(raw)?.let(Percent::parseOrNull)
 
-private fun asDuration(raw: Any) = asString(raw)?.let(Duration::parseOrNull)
+/** Negative and infinite durations are rejected: a configured wait or period is always finite. */
+private fun asDuration(raw: Any) = asString(raw)?.let(Duration::parseOrNull)?.takeIf { it.isFinite() && !it.isNegative() }

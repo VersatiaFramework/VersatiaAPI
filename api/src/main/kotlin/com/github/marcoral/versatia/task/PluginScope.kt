@@ -22,8 +22,8 @@ interface PluginScope : CoroutineScope {
     /**
      * A [Condition] living as long as the plugin: [check] is evaluated on the server thread now,
      * then again whenever one of [triggers] fires and whenever [Condition.recheck] is called. Its
-     * listeners go when the plugin stops. Inside a coroutine, the top-level [condition] binds them
-     * to that coroutine instead.
+     * listeners go when the plugin stops or [Condition.close] is called. Inside a coroutine, the
+     * top-level [condition] binds them to that coroutine instead.
      */
     fun condition(vararg triggers: RecheckTrigger, check: () -> Boolean): Condition
 }

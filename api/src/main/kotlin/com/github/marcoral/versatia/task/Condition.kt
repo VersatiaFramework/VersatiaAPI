@@ -9,16 +9,26 @@ import org.bukkit.event.EventPriority
  * The last result of a check, evaluated again only when a [RecheckTrigger] fires or [recheck] is
  * called, never by polling, so the check may be expensive. A state, not a stream of events: changes
  * that cancel each other out before the check runs again are not seen. Created by
- * [PluginScope.condition] or, bound to a coroutine, by [condition]; consumed by [whenever],
+ * [PluginScope.condition] or, bound to a coroutine, by [condition], and closed with its owner or
+ * by [close]; consumed by [whenever],
  * [runOnceWhile] and [awaitUntil] like any `Flow<Boolean>`. See docs/enhancements.md.
  */
 @OptIn(ExperimentalForInheritanceCoroutinesApi::class)
-interface Condition : StateFlow<Boolean> {
+interface Condition : StateFlow<Boolean>, AutoCloseable {
     /**
      * Evaluates the check again: at once when called on the server thread, so [value] is current
-     * when this returns, otherwise at the next tick. Call it right after changing what the check reads.
+     * when this returns, otherwise at the next tick. Call it right after changing what the check
+     * reads. Does nothing once the condition is closed.
      */
     fun recheck()
+
+    /**
+     * Stops the condition before its owner ends: its triggers stop listening, [recheck] and pending
+     * rechecks do nothing and [value] keeps its last result. Callable from any thread; closing
+     * again does nothing. Use it for a condition living shorter than its plugin, such as one per
+     * player made with [PluginScope.condition], or `use { }` it.
+     */
+    override fun close()
 }
 
 /**

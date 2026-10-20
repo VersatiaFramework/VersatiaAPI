@@ -146,7 +146,7 @@ class ValuePropertyTest : ProcessorTest() {
         assertContains(result.messages, "@Value on AlphaPlugin.holes: the elements of List<Int?> must not be nullable")
         assertContains(result.messages, "@Value on AlphaPlugin.keyed: the keys of Map<Int, String> must be String")
         assertContains(result.messages, "@Value on AlphaPlugin.mutable: MutableList<String> is not a supported type")
-        assertContains(result.messages, "Plain.nobody cannot be enhanced: Plain is neither the plugin's main class, an object nor a bean")
+        assertContains(result.messages, "Plain.nobody cannot be enhanced: Plain is neither the plugin's main class, an object, a bean nor a class a subclass enhancement creates")
         assertContains(result.messages, "BadValued.kt:")
         assertTrue(result.sourcesGeneratedBySymbolProcessor.none(), "no descriptor must be generated")
     }

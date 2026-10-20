@@ -12,7 +12,11 @@ import kotlinx.coroutines.launch
 class KeyedJobs<K : Any> internal constructor(private val scope: CoroutineScope) {
     private val jobs = ConcurrentHashMap<K, Job>()
 
-    /** The keys whose job has not completed yet. */
+    /**
+     * The keys whose job is current. [cancel] removes the entry at once and a replacing [launch]
+     * points it at the new job, even while the old job still runs its `finally` block; otherwise
+     * the entry goes when its job completes.
+     */
     val keys: Set<K> get() = jobs.keys
 
     operator fun contains(key: K) = jobs[key]?.isActive == true

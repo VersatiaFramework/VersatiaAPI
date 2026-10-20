@@ -36,8 +36,14 @@ class VirtualServerClock(private val scheduler: TestCoroutineScheduler) : Server
 @OptIn(ExperimentalForInheritanceCoroutinesApi::class)
 private class ManualCondition(private val check: () -> Boolean, private val state: MutableStateFlow<Boolean> = MutableStateFlow(check())) :
     Condition, StateFlow<Boolean> by state {
+    private var closed = false
+
     override fun recheck() {
-        state.value = check()
+        if (!closed) state.value = check()
+    }
+
+    override fun close() {
+        closed = true
     }
 }
 

@@ -104,6 +104,12 @@ enum class MemberOwner {
     OBJECT,
     /** Any other class; the processor has to obtain the instance itself. */
     INSTANCE,
+    /**
+     * A class that is no bean but is created by a subclass enhancement, such as a plain `Listener`
+     * or `BackgroundTask`: one instance per plugin, shared by every feature enhancing the class.
+     * Only `@Value` properties have it; the runtime sets them on that instance.
+     */
+    SUBCLASS_INSTANCE,
 }
 
 /** A function the runtime may call. */
@@ -131,8 +137,9 @@ data class PropertyTarget(
     val setter: Setter,
     override val classAnnotations: List<AnnotationOccurrence> = emptyList(),
     /**
-     * For a property declared in the primary constructor of a bean, the index of that constructor
-     * parameter: its value is passed to the constructor when the bean is created.
+     * For a property declared in the primary constructor of a bean or of a [MemberOwner.SUBCLASS_INSTANCE],
+     * the index of that constructor parameter: its value is passed to the constructor when the
+     * instance is created.
      */
     val constructorParameter: Int? = null,
 ) : MemberTarget {

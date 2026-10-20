@@ -67,11 +67,12 @@ internal class VersatiaSymbolProcessor(private val environment: SymbolProcessorE
         val beanCollector = BeanCollector(reporter, mainClass, enhancements, attributes, injection)
         val beans = beanCollector.collect(sources)
         val plugin = beanCollector.describePlugin(pluginCollector.collect(mainClass))
-        val owners = Owners(pluginLineageOf(mainClass), beanCollector.scopedTypes)
-        val functions = FunctionCollector(reporter, owners, enhancements, attributes, injection, jvm).collect(sources)
-        val properties = PropertyCollector(reporter, owners, enhancements, attributes).collect(sources)
         val subclasses = SubclassCollector(reporter, mainClass, attributes, injection).collect(sources, plugin.enhancements)
         val subclassTypes = subclasses.mapNotNull { it.clazz?.type?.canonicalName }
+        val created = subclasses.mapNotNull { it.clazz }.filterNot { it.isObject }.map { it.type.canonicalName }.toSet()
+        val owners = Owners(pluginLineageOf(mainClass), beanCollector.scopedTypes, created)
+        val functions = FunctionCollector(reporter, owners, enhancements, attributes, injection, jvm).collect(sources)
+        val properties = PropertyCollector(reporter, owners, enhancements, attributes).collect(sources)
         AttributePlacement(reporter, enhancements, attributes).validate(sources, mainClass, beanCollector.scopedTypes + subclassTypes)
 
         val pluginTypes = resolver.getClassDeclarationByName(VERSATIA_PLUGIN)?.assignableTypes()?.toSet().orEmpty()

@@ -53,7 +53,7 @@ internal class FunctionCollector(
             return reporter.fail(function, "$name overrides ${it.displayName()}, which is enhanced too, so the override would run for both; keep the enhancement on one of them")
         }
 
-        val ownerKind = clazz.memberOwner(owners) ?: return reporter.fail(function, "$name cannot be enhanced: ${clazz.notAnOwner()}")
+        val ownerKind = clazz.memberOwner(owners) ?: return reporter.fail(function, "$name cannot be enhanced: ${clazz.notAnOwner(owners)}")
         when {
             function.extensionReceiver != null -> return reporter.fail(function, "$name must not be an extension function to be enhanced")
             Modifier.SUSPEND in function.modifiers -> return reporter.fail(function, "$name must not be suspend to be enhanced; implement BackgroundTask for work that runs with the plugin, or launch from an injected PluginScope")

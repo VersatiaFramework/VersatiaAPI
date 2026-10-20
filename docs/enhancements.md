@@ -85,8 +85,10 @@ The descriptor records facts about the annotated code, never what a feature make
 attributes on it, `optional` when it has a default value, and `suppliedBy` naming the processor
 that supplies the argument instead of a bean, as `ConfigProcessors.VALUE` does for a `@Value`
 constructor property) and an `Instantiator`. A `FunctionTarget` has the declaring class (Kotlin and JVM
-names), the function name, who holds the instance (`MemberOwner`: `PLUGIN`, `OBJECT` or
-`INSTANCE` for a class whose instance the processor must obtain), the attributes on the function,
+names), the function name, who holds the instance (`MemberOwner`: `PLUGIN`, `OBJECT`,
+`INSTANCE` for a class whose instance the processor must obtain, or, for a `@Value` property only,
+`SUBCLASS_INSTANCE` for a class a subclass enhancement creates without it being a bean, such as a
+plain `Listener`), the attributes on the function,
 its parameters, an `Invoker` and the attributes on the declaring class (`classAnnotations`, for
 what applies to a whole class). A `PropertyTarget` has the same owner facts for a mutable
 property, its type as a `TypeReference` (qualified name, type arguments, nullability), a
@@ -109,7 +111,7 @@ walk it. Changing how VersatiaCore iterates therefore never requires regeneratin
 ### Format version
 
 The format has its own `major.minor` version (`VersatiaPluginDescriptor.FORMAT_VERSION`, currently
-`1.4`), independent of the library version. A runtime accepts exactly the version it was built
+`1.5`), independent of the library version. A runtime accepts exactly the version it was built
 with and rejects any other with a message naming the plugin, both versions and the fix. The
 generator writes the two numbers as literal `Int` properties (`formatMajor`, `formatMinor`), so a
 runtime can read them from any descriptor before deciding what to do with it; for the same reason
@@ -265,6 +267,12 @@ parameter is always required. A `@Value` constructor property is not a dependenc
 `Parameter` names the `@Value` processor in `suppliedBy`, which hands a function returning the
 current value to `BeanResolver.supply` before the beans are created (see [Configuration values](#configuration-values)).
 
+Every plugin can inject, without declaring anything, its main class (the bean `plugin`, below)
+and the beans VersatiaCore exposes: `PluginRegistry` (singleton), and the prototypes `PluginScope`,
+`java.util.logging.Logger` (`plugin.logger`) and `ComponentLogger` (`plugin.componentLogger`, also
+as `org.slf4j.Logger`), each made for the plugin injecting it. The processor knows none of these types: like any exposed bean, a dependency on them is left to
+the runtime, and a local bean of the same type takes precedence under the usual rules.
+
 ### Reloadable beans
 
 A bean implementing `Reloadable` (`di`) has its `reload()` called by the runtime once the beans
@@ -392,7 +400,7 @@ Generated for it (shortened):
 
 object VersatiaDescriptor : VersatiaPluginDescriptor {
   override val formatMajor: Int = 1
-  override val formatMinor: Int = 4
+  override val formatMinor: Int = 5
 
   override val elements: List<EnhancedElement>
     get() = listOf(
@@ -580,8 +588,12 @@ class Shop {
 ```
 
 - The property may belong to the plugin's main class, to a Kotlin `object`, or to a bean, like an
-  auto-invoked function, and must be a `var`, or a `val` holding a `PreviousValueTracking` (below);
-  any other `val`, a top-level property or one of a plain class is a compile error. `config.PropertyCollector` applies the rules; it is generic over
+  auto-invoked function, or to a class a subclass enhancement creates without it being a bean
+  (`MemberOwner.SUBCLASS_INSTANCE`, constructor properties included; the processor runs the
+  subclass collection first to know those classes), and must be a `var`, or a `val` holding a
+  `PreviousValueTracking` (below); any other `val`, a top-level property or one of a plain class
+  nothing creates is a compile error, and so is any other enhanced member of such a class (`X is
+  created by a subclass enhancement, which sets only its @Value properties; ...`). `config.PropertyCollector` applies the rules; it is generic over
   enhancements on properties, with the type check being the one `@Value`-specific part.
 - Without a mapper the type must be one of `ValueTypes` (`config`): the scalars read by the strict
   getters (`Boolean`, `Int`, `Long`, `Float`, `Double`, `UInt`, `ULong`, `String`, `Percent`), any
@@ -741,9 +753,9 @@ one, for `RunBackgroundTasksEnhancementProcessor` at `PLUGIN_RELOAD_OR_START`; a
 launches it again at every reload once the values are set; the second resolves the plugin's scope
 at start and, at stop, cancels and awaits every coroutine of the plugin before the stop functions
 run, an order the closing of the beans, which comes after them, could not give. A `@Value` on a
-plain task class is the usual error (`... is neither the plugin's main class, an object nor a
-bean`), and `@ConditionalOnPlugin` on a task class is recorded on its `ClassTarget` like on a
-listener. `@DisableVersatiaFeatures(runBackgroundTasks = true)` removes all three kinds of element:
+plain task class is set on the instance the task processor runs, before its first run and at
+every reload before the restart, and `@ConditionalOnPlugin` on a task class is recorded on its
+`ClassTarget` like on a listener. `@DisableVersatiaFeatures(runBackgroundTasks = true)` removes all three kinds of element:
 tasks are not run, and an injected scope is then cancelled only when the bean session closes it.
 
 There is no invoker for suspend functions. An `@AutoInvoke` function runs inside the lifecycle

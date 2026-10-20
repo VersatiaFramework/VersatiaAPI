@@ -2,12 +2,15 @@ package com.github.marcoral.versatia.ksp
 
 import com.github.marcoral.versatia.Phase
 import com.github.marcoral.versatia.VersatiaPlugin
+import com.github.marcoral.versatia.config.ConfigProcessors
 import com.github.marcoral.versatia.di.BeanProcessors
 import com.github.marcoral.versatia.engine.descriptor.AnnotationOccurrence
 import com.github.marcoral.versatia.engine.descriptor.ClassTarget
 import com.github.marcoral.versatia.engine.descriptor.Instantiator
+import com.github.marcoral.versatia.engine.descriptor.MemberOwner
 import com.github.marcoral.versatia.engine.descriptor.Parameter
 import com.github.marcoral.versatia.engine.descriptor.PluginTarget
+import com.github.marcoral.versatia.engine.descriptor.PropertyTarget
 import com.github.marcoral.versatia.engine.descriptor.VersatiaPluginDescriptor
 import com.github.marcoral.versatia.resources.ResourceProcessors
 import com.github.marcoral.versatia.task.RunBackgroundTasks
@@ -164,20 +167,61 @@ class TaskElementsTest : ProcessorTest() {
     }
 
     @Test
-    fun `a plain task class cannot hold Value properties`() {
+    fun `a plain task or listener class holds Value properties, set on the instance its enhancement creates`() {
         val result = compile(
             """
             package com.example.alpha
 
             import com.github.marcoral.versatia.VersatiaPlugin
+            import com.github.marcoral.versatia.config.PreviousValueTracking
             import com.github.marcoral.versatia.config.Value
+            import com.github.marcoral.versatia.task.BackgroundTask
+            import org.bukkit.event.Listener
+
+            class AlphaPlugin : VersatiaPlugin()
+
+            class Broadcasts(@Value("prefix") var prefix: String, @Value("limit") val limit: PreviousValueTracking<Int>) : BackgroundTask {
+                @Value("period")
+                var period = 0L
+
+                override suspend fun run() {}
+            }
+
+            class Greeter : Listener {
+                @Value("greeting")
+                private var greeting = ""
+            }
+            """,
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
+        val properties = result.descriptor().elements.map { it.target }.filterIsInstance<PropertyTarget>().associateBy { it.propertyName }
+        assertEquals(setOf("prefix", "limit", "period", "greeting"), properties.keys)
+        assertTrue(properties.values.all { it.owner == MemberOwner.SUBCLASS_INSTANCE })
+        assertEquals(0, properties.getValue("prefix").constructorParameter)
+        assertEquals(1, properties.getValue("limit").constructorParameter)
+        assertEquals(null, properties.getValue("period").constructorParameter)
+        val task = result.descriptor().elementsOf(TaskProcessors.RUN_BACKGROUND_TASKS).single().target
+        assertIs<ClassTarget>(task)
+        assertTrue(task.constructorParameters.all { it.suppliedBy == ConfigProcessors.VALUE })
+    }
+
+    @Test
+    fun `a plain task class holds no other enhanced members`() {
+        val result = compile(
+            """
+            package com.example.alpha
+
+            import com.github.marcoral.versatia.Phase
+            import com.github.marcoral.versatia.VersatiaPlugin
+            import com.github.marcoral.versatia.lifecycle.AutoInvoke
             import com.github.marcoral.versatia.task.BackgroundTask
 
             class AlphaPlugin : VersatiaPlugin()
 
             class Broadcasts : BackgroundTask {
-                @Value("period")
-                var period = 0L
+                @AutoInvoke(Phase.PLUGIN_START_ONLY)
+                fun prepare() {}
 
                 override suspend fun run() {}
             }
@@ -185,6 +229,6 @@ class TaskElementsTest : ProcessorTest() {
         )
 
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
-        assertContains(result.messages, "Broadcasts.period cannot be enhanced: Broadcasts is neither the plugin's main class, an object nor a bean")
+        assertContains(result.messages, "Broadcasts.prepare cannot be enhanced: Broadcasts is created by a subclass enhancement, which sets only its @Value properties")
     }
 }
