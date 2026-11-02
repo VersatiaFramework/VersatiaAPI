@@ -99,6 +99,55 @@ class ValuePropertyTest : ProcessorTest() {
     }
 
     @Test
+    fun `accepts Secret alone, in lists and in maps, and sets it directly or reflectively`() {
+        val result = compile(
+            SourceFile.kotlin(
+                "Secrets.kt",
+                """
+                package com.example.alpha
+
+                import com.github.marcoral.versatia.VersatiaPlugin
+                import com.github.marcoral.versatia.config.Value
+                import com.github.marcoral.versatia.util.type.Secret
+
+                class AlphaPlugin : VersatiaPlugin()
+
+                object Tokens {
+                    @Value("discord.token")
+                    var discord = Secret.EMPTY
+
+                    @Value("webhooks")
+                    private var webhooks: Map<String, Secret> = emptyMap()
+
+                    @Value("keys")
+                    var keys: List<Secret>? = null
+
+                    fun describe() = "discord ${'$'}discord (${'$'}{discord.reveal()}), webhooks ${'$'}webhooks (${'$'}{webhooks.values.map { it.reveal() }})"
+                }
+                """,
+            ),
+            mainClass = null,
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
+        val properties = result.descriptor().elements.mapNotNull { it.target as? PropertyTarget }.associateBy { it.propertyName }
+        val secret = TypeReference("com.github.marcoral.versatia.util.type.Secret")
+        assertEquals(secret, properties.getValue("discord").type)
+        assertEquals(TypeReference("kotlin.collections.Map", listOf(TypeReference("kotlin.String"), secret)), properties.getValue("webhooks").type)
+        assertEquals(TypeReference("kotlin.collections.List", listOf(secret), nullable = true), properties.getValue("keys").type)
+        assertIs<Setter.Direct>(properties.getValue("discord").setter)
+        assertIs<Setter.Reflective>(properties.getValue("webhooks").setter)
+
+        val tokensClass = result.classLoader.loadClass("com.example.alpha.Tokens")
+        val tokens = tokensClass.getDeclaredField("INSTANCE").get(null)
+        val secretClass = result.classLoader.loadClass(secret.name)
+        val box = { text: String -> secretClass.getMethod("box-impl", String::class.java).invoke(null, text) }
+        properties.getValue("discord").setter.set(result.classLoader, tokens, box("abc"))
+        properties.getValue("webhooks").setter.set(result.classLoader, tokens, mapOf("alerts" to box("https://example.net/hook")))
+        assertEquals("discord **** (abc), webhooks {alerts=****} ([https://example.net/hook])", tokensClass.getMethod("describe").invoke(tokens))
+    }
+
+    @Test
     fun `rejects Value properties the runtime could not set`() {
         val result = compile(
             SourceFile.kotlin(

@@ -14,7 +14,7 @@ interface PluginRegistry {
     /** The names in [plugins]. */
     val friendlyNames: Set<String> get() = plugins.keys
 
-    /** The name [plugin] is registered under, or null when it is not a running Versatia plugin. */
+    /** The name [plugin] is registered under, already while it starts, or null when it is neither starting nor running. */
     fun friendlyNameOf(plugin: Plugin): String? = plugins.entries.firstOrNull { it.value === plugin }?.key
 
     operator fun get(friendlyName: String): Plugin? = plugins[friendlyName]

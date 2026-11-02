@@ -1,5 +1,6 @@
 package com.github.marcoral.versatia.task
 
+import kotlin.time.Duration
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 
@@ -26,4 +27,10 @@ interface PluginScope : CoroutineScope {
      * top-level [condition] binds them to that coroutine instead.
      */
     fun condition(vararg triggers: RecheckTrigger, check: () -> Boolean): Condition
+
+    /**
+     * Values per player living as long as the plugin: a player's value goes when they quit, or [keepAfterQuit] later
+     * unless they join again meanwhile (a combat tag that outlives a log-out), and all go when the plugin stops.
+     */
+    fun <T : Any> perPlayer(keepAfterQuit: Duration = Duration.ZERO): PlayerValues<T>
 }

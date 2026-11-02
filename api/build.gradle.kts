@@ -47,6 +47,8 @@ kotlin {
 
 tasks.test {
     useJUnitPlatform()
+    // Read through ${env:VERSATIA_TEST_SECRET} by the tests of secrets
+    environment("VERSATIA_TEST_SECRET", "from-the-environment")
 }
 
 publishing {

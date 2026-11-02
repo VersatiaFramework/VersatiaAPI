@@ -39,7 +39,7 @@ class ConfigurationExtensionsTest {
               inner:
                 value: 1
             strings:
-              a: 1
+              a: '1'
               b: two
             """.trimIndent(),
         )
@@ -200,6 +200,7 @@ class ConfigurationExtensionsTest {
         val lists = yaml(
             """
             mixed: [1, x, 2]
+            quoted: ['1', x, '2']
             decimals: [1, 2.7]
             bytes: [1, 300]
             uints: [1, 4294967297]
@@ -226,7 +227,7 @@ class ConfigurationExtensionsTest {
         assertEquals(listOf(1.0, 2.7), lists.getDoubleListOrNull("decimals"))
         assertEquals("Element 1 of list at \"nested\" is not a string: \"{b=1}\"", assertFailsWith<ConfigurationValueException> { lists.getStringListOrNull("nested") }.message)
         assertEquals("Element 1 of list at \"withNull\" is not a boolean: \"null\"", assertFailsWith<ConfigurationValueException> { lists.getBooleanListOrNull("withNull") }.message)
-        assertEquals(listOf("1", "x", "2"), lists.getStringListOrThrow("mixed"))
+        assertEquals(listOf("1", "x", "2"), lists.getStringListOrThrow("quoted"))
     }
 
     @Test
@@ -253,16 +254,29 @@ class ConfigurationExtensionsTest {
 
     @Test
     fun `string getters reject sections and lists instead of printing them`() {
-        val strings = yaml("text: hello\nnumber: 5\nflag: true\nlist: [a, b]\nsection:\n  a: 1")
+        val strings = yaml("text: hello\nnumber: 5\nflag: true\nlist: [a, b]\nsection:\n  a: 1\nquoted: '01234'")
         assertEquals("hello", strings.getStringOrThrow("text"))
-        assertEquals("5", strings.getStringOrNull("number"))
-        assertEquals("true", strings.getStringOrThrow("flag"))
+        assertEquals("01234", strings.getStringOrThrow("quoted"))
         assertNull(strings.getStringOrNull("missing"))
         assertEquals("Value at \"list\" is not a string: \"[a, b]\"", assertFailsWith<ConfigurationValueException> { strings.getStringOrThrow("list") }.message)
         assertEquals("Value at \"section\" is a section, expected a string", assertFailsWith<ConfigurationValueException> { strings.getStringOrNull("section") }.message)
         assertFailsWith<ConfigurationValueException> { strings.getStringOrThrow("") }
         assertFailsWith<ConfigurationValueException> { strings.ifStringPresent("list") {} }
         assertFailsWith<ConfigurationValueException> { yaml("map:\n  a: [1]").getConfigurationSectionOrThrow("map").asStringsMap() }
+    }
+
+    @Test
+    fun `string getters ask for quotes where YAML read a number, a boolean or a date`() {
+        val strings = yaml("code: 01234\nflag: yes\nversion: 1.10\nlist: [a, 0123]")
+        assertEquals(
+            "Value at \"code\" is read as a number (668), not text; quote it, since YAML reads unquoted numbers, booleans and dates as other types (0123 reads as 83)",
+            assertFailsWith<ConfigurationValueException> { strings.getStringOrNull("code") }.message,
+        )
+        assertTrue(assertFailsWith<ConfigurationValueException> { strings.getStringOrThrow("flag") }.message!!.startsWith("Value at \"flag\" is read as a boolean (true), not text"))
+        assertTrue(assertFailsWith<ConfigurationValueException> { strings.getStringOrNull("version") }.message!!.startsWith("Value at \"version\" is read as a number (1.1), not text"))
+        assertTrue(assertFailsWith<ConfigurationValueException> { strings.getStringListOrThrow("list") }.message!!.startsWith("Element 1 of list at \"list\" is read as a number (83), not text"))
+        assertEquals("Own message", assertFailsWith<ConfigurationValueException> { strings.getStringOrThrow("code", "Own message") }.message)
+        assertFalse(strings.isString("missing"))
     }
 
     @Test

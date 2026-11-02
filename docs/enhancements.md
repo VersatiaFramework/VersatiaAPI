@@ -111,7 +111,7 @@ walk it. Changing how VersatiaCore iterates therefore never requires regeneratin
 ### Format version
 
 The format has its own `major.minor` version (`VersatiaPluginDescriptor.FORMAT_VERSION`, currently
-`1.5`), independent of the library version. A runtime accepts exactly the version it was built
+`1.6`), independent of the library version. A runtime accepts exactly the version it was built
 with and rejects any other with a message naming the plugin, both versions and the fix. The
 generator writes the two numbers as literal `Int` properties (`formatMajor`, `formatMinor`), so a
 runtime can read them from any descriptor before deciding what to do with it; for the same reason
@@ -596,7 +596,8 @@ class Shop {
   created by a subclass enhancement, which sets only its @Value properties; ...`). `config.PropertyCollector` applies the rules; it is generic over
   enhancements on properties, with the type check being the one `@Value`-specific part.
 - Without a mapper the type must be one of `ValueTypes` (`config`): the scalars read by the strict
-  getters (`Boolean`, `Int`, `Long`, `Float`, `Double`, `UInt`, `ULong`, `String`, `Percent`), any
+  getters (`Boolean`, `Int`, `Long`, `Float`, `Double`, `UInt`, `ULong`, `String`, `Percent`,
+  `Duration`, `Secret`), any
   enum, the Bukkit types with their own deserialisation (`Color`, `Location`, `OfflinePlayer`,
   `Vector`, `ItemStack`, `ConfigurationSection`), `List` or `Set` of a scalar or enum, `Map` from
   `String` to one, and any of them nullable, which makes the value optional. Lists and sets are
@@ -723,8 +724,9 @@ The `task` package makes work over time a coroutine of the plugin. Its definitio
 
 - `BackgroundTask`, an interface with `suspend fun run()`: every class of the plugin implementing
   it runs as long as the plugin, never registered.
-- `PluginScope`, a `CoroutineScope` injected like a bean, with `serverThread` (its dispatcher) and
-  `condition(...)`; VersatiaCore exposes it as a prototype, so each plugin, and each module
+- `PluginScope`, a `CoroutineScope` injected like a bean, with `serverThread` (its dispatcher),
+  `condition(...)` and `perPlayer(keepAfterQuit)`, whose `PlayerValues` keep one value per player
+  until the quit (or `keepAfterQuit` later unless the player joins again) and the plugin's stop; VersatiaCore exposes it as a prototype, so each plugin, and each module
   prototype made for one, receives that plugin's scope.
 - `Condition` (a `StateFlow<Boolean>` with `recheck()`), `RecheckTrigger` built by `recheckOn<E>()`
   and the subject shorthands of `SubjectTriggers.kt`; `awaitUntil`, `runOnceWhile` and `whenever`

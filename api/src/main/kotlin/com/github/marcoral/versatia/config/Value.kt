@@ -4,6 +4,7 @@ import com.github.marcoral.versatia.Phase
 import com.github.marcoral.versatia.VersatiaEnhancement
 import com.github.marcoral.versatia.VersatiaInternalApi
 import com.github.marcoral.versatia.util.type.Percent
+import com.github.marcoral.versatia.util.type.Secret
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 
@@ -51,7 +52,7 @@ object ConfigProcessors {
 object ValueTypes {
     /** Read with the strict getters, as single values, as the values of maps and, through the strict list getters, as the elements of lists and sets. */
     val SCALARS = setOf(
-        Boolean::class, Int::class, Long::class, Float::class, Double::class, UInt::class, ULong::class, String::class, Percent::class, Duration::class,
+        Boolean::class, Int::class, Long::class, Float::class, Double::class, UInt::class, ULong::class, String::class, Percent::class, Duration::class, Secret::class,
     ).map { it.qualifiedName!! }.toSet()
 
     /** Read with the Bukkit deserialisers, as single values only. Names, not classes: the compile-time step has no Paper API. */

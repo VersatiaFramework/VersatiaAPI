@@ -2,7 +2,9 @@ package com.github.marcoral.versatia.util.config
 
 import com.github.marcoral.versatia.util.lang.asEnumIgnoreCase
 import com.github.marcoral.versatia.util.type.Percent
+import com.github.marcoral.versatia.util.type.Secret
 import java.math.BigInteger
+import java.util.Date
 import kotlin.enums.enumEntries
 import kotlin.time.Duration
 import org.bukkit.Color
@@ -38,14 +40,14 @@ fun ConfigurationSection.getIntOrNull(key: String) = valueOrNull(key, INT_EXPECT
 fun ConfigurationSection.getLongOrNull(key: String) = valueOrNull(key, LONG_EXPECTED) { asLong(it) }
 fun ConfigurationSection.getDoubleOrNull(key: String) = valueOrNull(key, DOUBLE_EXPECTED) { asDouble(it) }
 fun ConfigurationSection.getFloatOrNull(key: String) = valueOrNull(key, FLOAT_EXPECTED) { asFloat(it) }
-fun ConfigurationSection.getStringOrNull(key: String) = valueOrNull(key, STRING_EXPECTED) { asString(it) }
+fun ConfigurationSection.getStringOrNull(key: String) = valueOrNull(key, STRING_EXPECTED) { asText(key, it, null) }
 
 fun ConfigurationSection.getBooleanOrThrow(key: String, exceptionMessage: String? = null) = requireValue(key, BOOLEAN_EXPECTED, exceptionMessage) { asBoolean(it) }
 fun ConfigurationSection.getIntOrThrow(key: String, exceptionMessage: String? = null) = requireValue(key, INT_EXPECTED, exceptionMessage) { asInt(it) }
 fun ConfigurationSection.getLongOrThrow(key: String, exceptionMessage: String? = null) = requireValue(key, LONG_EXPECTED, exceptionMessage) { asLong(it) }
 fun ConfigurationSection.getDoubleOrThrow(key: String, exceptionMessage: String? = null) = requireValue(key, DOUBLE_EXPECTED, exceptionMessage) { asDouble(it) }
 fun ConfigurationSection.getFloatOrThrow(key: String, exceptionMessage: String? = null) = requireValue(key, FLOAT_EXPECTED, exceptionMessage) { asFloat(it) }
-fun ConfigurationSection.getStringOrThrow(key: String, exceptionMessage: String? = null) = requireValue(key, STRING_EXPECTED, exceptionMessage) { asString(it) }
+fun ConfigurationSection.getStringOrThrow(key: String, exceptionMessage: String? = null) = requireValue(key, STRING_EXPECTED, exceptionMessage) { asText(key, it, exceptionMessage) }
 
 inline fun ConfigurationSection.ifBooleanPresent(key: String, action: (Boolean) -> Unit) { getBooleanOrNull(key)?.let(action) }
 inline fun ConfigurationSection.ifIntPresent(key: String, action: (Int) -> Unit) { getIntOrNull(key)?.let(action) }
@@ -61,14 +63,14 @@ fun ConfigurationSection.getIntListOrNull(key: String) = listOrNull(key, INT_EXP
 fun ConfigurationSection.getLongListOrNull(key: String) = listOrNull(key, LONG_EXPECTED) { asLong(it) }
 fun ConfigurationSection.getDoubleListOrNull(key: String) = listOrNull(key, DOUBLE_EXPECTED) { asDouble(it) }
 fun ConfigurationSection.getFloatListOrNull(key: String) = listOrNull(key, FLOAT_EXPECTED) { asFloat(it) }
-fun ConfigurationSection.getStringListOrNull(key: String) = listOrNull(key, STRING_EXPECTED) { asString(it) }
+fun ConfigurationSection.getStringListOrNull(key: String) = valueOrNull(key, LIST_EXPECTED) { it as? List<*> }?.let { texts(key, it) }
 
 fun ConfigurationSection.getBooleanListOrThrow(key: String, exceptionMessage: String? = null) = requireList(key, BOOLEAN_EXPECTED, exceptionMessage) { asBoolean(it) }
 fun ConfigurationSection.getIntListOrThrow(key: String, exceptionMessage: String? = null) = requireList(key, INT_EXPECTED, exceptionMessage) { asInt(it) }
 fun ConfigurationSection.getLongListOrThrow(key: String, exceptionMessage: String? = null) = requireList(key, LONG_EXPECTED, exceptionMessage) { asLong(it) }
 fun ConfigurationSection.getDoubleListOrThrow(key: String, exceptionMessage: String? = null) = requireList(key, DOUBLE_EXPECTED, exceptionMessage) { asDouble(it) }
 fun ConfigurationSection.getFloatListOrThrow(key: String, exceptionMessage: String? = null) = requireList(key, FLOAT_EXPECTED, exceptionMessage) { asFloat(it) }
-fun ConfigurationSection.getStringListOrThrow(key: String, exceptionMessage: String? = null) = requireList(key, STRING_EXPECTED, exceptionMessage) { asString(it) }
+fun ConfigurationSection.getStringListOrThrow(key: String, exceptionMessage: String? = null) = texts(key, requireValue(key, LIST_EXPECTED, exceptionMessage) { it as? List<*> })
 
 /* UNSIGNED */
 
@@ -115,6 +117,28 @@ fun ConfigurationSection.getDurationOrThrow(key: String, exceptionMessage: Strin
 fun ConfigurationSection.isDuration(key: String) = get(key)?.let { asDuration(it) } != null
 inline fun ConfigurationSection.ifDurationPresent(key: String, action: (Duration) -> Unit) { getDurationOrNull(key)?.let(action) }
 fun ConfigurationSection.getDurationList(key: String) = listOrNull(key, DURATION_EXPECTED) { asDuration(it) }.orEmpty()
+
+/* SECRET (text, ${env:NAME}, ${file:PATH} or ${pluginfile:PATH}; no message shows the value) */
+
+fun ConfigurationSection.getSecretOrNull(key: String) = get(key)?.let { Secret(SecretReferences.resolve(it, valueAt(key), null, dataFolder())) }
+fun ConfigurationSection.getSecret(key: String, def: Secret) = getSecretOrNull(key) ?: def
+fun ConfigurationSection.getSecretOrThrow(key: String, exceptionMessage: String? = null) =
+    Secret(SecretReferences.resolve(get(key) ?: throw missingValue(key, exceptionMessage), valueAt(key), exceptionMessage, dataFolder()))
+fun ConfigurationSection.isSecret(key: String) = try {
+    getSecretOrNull(key) != null
+} catch (_: ConfigurationValueException) {
+    false
+}
+inline fun ConfigurationSection.ifSecretPresent(key: String, action: (Secret) -> Unit) { getSecretOrNull(key)?.let(action) }
+fun ConfigurationSection.getSecretList(key: String): List<Secret> = when (val raw = get(key)) {
+    null -> emptyList()
+    is List<*> -> raw.mapIndexed { index, element -> Secret(SecretReferences.resolve(element, "Element $index of list at \"${pathOf(key)}\"", null, dataFolder())) }
+    else -> throw ConfigurationValueException("${valueAt(key)} is ${if (raw is ConfigurationSection) "a section" else "a single value"}, expected a list of secrets")
+}
+
+private fun ConfigurationSection.valueAt(key: String) = "Value at \"${pathOf(key)}\""
+
+private fun ConfigurationSection.dataFolder() = (root as? PluginYamlConfiguration)?.dataFolder
 
 /* ENUMS (matched by name, ignoring case) */
 
@@ -198,6 +222,35 @@ private fun asFloat(raw: Any) = (raw as? Number)?.let { number -> number.toFloat
 
 /** Any single value in its text form; sections and lists are rejected instead of being printed. */
 private fun asString(raw: Any) = raw.takeUnless { it is ConfigurationSection || it is Map<*, *> || it is Collection<*> }?.toString()
+
+/**
+ * A string as YAML read it; null for a section or a list. A number, a boolean or a date is an error asking for quotes,
+ * since YAML changed the text (`0123` reads as 83, `1.10` as 1.1, `yes` as true), which [message] replaces.
+ */
+private fun ConfigurationSection.asText(key: String, raw: Any, message: String?) = when (raw) {
+    is String -> raw
+    is ConfigurationSection, is Map<*, *>, is Collection<*> -> null
+    else -> throw ConfigurationValueException(message ?: notText("Value at \"${pathOf(key)}\"", raw))
+}
+
+/** The elements of [list], the list at [key], as strings, with the messages of [asText] naming the element. */
+private fun ConfigurationSection.texts(key: String, list: List<*>) = list.mapIndexed { index, element ->
+    when (element) {
+        is String -> element
+        null, is ConfigurationSection, is Map<*, *>, is Collection<*> -> throw invalidListElement(key, index, element, STRING_EXPECTED)
+        else -> throw ConfigurationValueException(notText("Element $index of list at \"${pathOf(key)}\"", element))
+    }
+}
+
+private fun notText(where: String, raw: Any) =
+    "$where is read as ${kindOf(raw)} ($raw), not text; quote it, since YAML reads unquoted numbers, booleans and dates as other types (0123 reads as 83)"
+
+private fun kindOf(raw: Any) = when (raw) {
+    is Boolean -> "a boolean"
+    is Number -> "a number"
+    is Date -> "a date"
+    else -> "a ${raw.javaClass.simpleName}"
+}
 
 private fun asUnsigned(raw: Any, max: Long) = asLong(raw)?.takeIf { it in 0..max }
 

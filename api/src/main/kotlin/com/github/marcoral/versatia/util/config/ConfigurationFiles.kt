@@ -16,7 +16,17 @@ val YAML_EXTENSIONS = setOf("yml", "yaml")
  * and a file that is not UTF-8 is an [InvalidConfigurationException] instead of text with
  * replacement characters.
  */
-fun loadYamlOrThrow(file: File) = YamlConfiguration().apply { loadFromString(file.readStrictUtf8()) }
+fun loadYamlOrThrow(file: File): YamlConfiguration = YamlConfiguration().apply { loadFromString(file.readStrictUtf8()) }
+
+/** As [loadYamlOrThrow], for a file [plugin] reads: its `${pluginfile:PATH}` secrets start at the plugin's data folder. */
+fun loadYamlOrThrow(file: File, plugin: Plugin): YamlConfiguration = loadYamlOrThrow(file, plugin.dataFolder)
+
+/** As [loadYamlOrThrow]; its `${pluginfile:PATH}` secrets start at [dataFolder]. */
+fun loadYamlOrThrow(file: File, dataFolder: File): YamlConfiguration =
+    PluginYamlConfiguration(dataFolder.toPath().toAbsolutePath()).apply { loadFromString(file.readStrictUtf8()) }
+
+/** A YAML file read for the plugin whose data folder is [dataFolder]. */
+internal class PluginYamlConfiguration(val dataFolder: Path) : YamlConfiguration()
 
 /**
  * Every `.yml`/`.yaml` file under this directory, recursively, ordered by the path relative to it
@@ -29,7 +39,7 @@ fun File.yamlFiles() = takeIf { it.isDirectory }?.walk().orEmpty()
 
 /** Runs [action] for every `.yml`/`.yaml` file under `<data folder>/<pluginRelativePath>`, recursively, in path order. */
 fun Plugin.forEachYamlFile(pluginRelativePath: String, action: (Path, YamlConfiguration) -> Unit) =
-    dataFolder.resolve(pluginRelativePath).yamlFiles().forEach { action(it.toPath(), loadYamlOrThrow(it)) }
+    dataFolder.resolve(pluginRelativePath).yamlFiles().forEach { action(it.toPath(), loadYamlOrThrow(it, this)) }
 
 fun <T> Plugin.mapYamlFiles(pluginRelativePath: String, action: (Path, YamlConfiguration) -> T): Map<Path, T> = buildMap {
     forEachYamlFile(pluginRelativePath) { path, config -> put(path, action(path, config)) }

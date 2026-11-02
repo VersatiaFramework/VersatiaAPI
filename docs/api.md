@@ -35,14 +35,14 @@ by the kind of helper they are. Package names below are relative to `util`.
 | Package        | Contents                                                                                 |
 |----------------|------------------------------------------------------------------------------------------|
 | `collection`   | `addOrThrow`/`putAllOrThrow`-style helpers for sets and maps, `DeepMergeMap`, `List.cycle()` (an endless iterator over a copy of the list) |
-| `config`       | Strict typed getters for `ConfigurationSection`, `kotlin.time.Duration` included, YAML file traversal |
+| `config`       | Strict typed getters for `ConfigurationSection`, `kotlin.time.Duration` and `Secret` included, YAML file traversal |
 | `inventory`    | `ItemStack`/`Inventory` helpers, `PlayerInventory` indices of the equipment slots         |
 | `lang`         | Enum lookups ignoring case                                                                |
 | `plugin`       | `Plugin.log`, `logWarning`, `logSevere` shorthands over the plugin logger                 |
 | `reflect`      | Access to private members through `kotlin-reflect`                                        |
 | `scheduler`    | `Plugin.runTask*` wrappers over `BukkitScheduler`                                         |
 | `text`         | Subscript/superscript digits                                                             |
-| `type`         | Small value type `Percent`                                                                |
+| `type`         | Small value types `Percent` and `Secret`                                                  |
 | `validation`   | `validateAtLeast`-style guards that return the receiver                                   |
 | `world`        | `Location` helpers, `Location.isWithin(distance, other)` among them                       |
 
@@ -122,8 +122,9 @@ not a number, so a typo in a config file turns into a silent default. The helper
 `3000000000` loads as `Long` and is rejected, use `getLongOrNull`), unsigned getters accept their
 whole range (`UInt` up to 4294967295, `ULong` up to 18446744073709551615) and reject negative numbers
 instead of wrapping them, float getters reject a finite number that overflows a float instead of
-returning infinity, string getters accept any single value (`5` reads as `"5"`) but reject a section
-or a list instead of printing it, `getPercent*` requires a trailing `%`, enum getters match the
+returning infinity, string getters accept only what YAML read as a string: an unquoted number,
+boolean or date (`01234` reads as 668, `1.10` as 1.1, `yes` as `true`) is an error asking for quotes,
+since the text is lost by then, and a section or a list is rejected instead of being printed, `getPercent*` requires a trailing `%`, enum getters match the
 constant name ignoring case and list up to twenty allowed names in the error, `getDuration*` read
 `Duration.parseOrNull` of the value's text, so Kotlin's notation (`30s`, `1h 30m`, `500ms`, `2d`)
 or ISO-8601 (`PT5M`), and reject a bare number, which names no unit. The enum getters exist
@@ -174,6 +175,35 @@ directory under the plugin's data folder in that order and load every file with
 
 `Duration` has the same families as `Percent`: `getDurationOrNull`, `getDuration(key, def)`,
 `getDurationOrThrow`, `isDuration`, `ifDurationPresent` and `getDurationList`.
+
+### Secrets
+
+`Secret` (`util.type`) is an inline value class around a `String` whose `toString()` is `****`
+(`''` when empty), so a log line, a message or an exception never carries it; `reveal()` returns
+the text. `getSecretOrNull`, `getSecret(key, def)`, `getSecretOrThrow`, `isSecret`,
+`ifSecretPresent` and `getSecretList` read it, and `@Value` reads a `Secret` property with them.
+`SecretReferences` (internal) resolves the value:
+
+- the value must be a YAML string; a number, a boolean or a date (an unquoted `0123` is 83, `yes`
+  is `true`) is rejected with a request for quotes, since it may differ from what was written;
+- every `${env:NAME}` becomes `System.getenv(NAME)`, every `${file:PATH}` the file's content,
+  decoded as strict UTF-8, without a leading byte order mark and without trailing `\r` and `\n`;
+  a relative `PATH` is resolved against the working directory (the server folder), an absolute
+  one is taken as it is; every `${pluginfile:PATH}` reads the same way from the data folder of the
+  plugin the file was loaded for (`loadYamlOrThrow(file, plugin)`, which `@Value` and
+  `forEachYamlFile` use; the root `YamlConfiguration` carries the folder), and fails in any other
+  file, naming the `${file:plugins/<plugin>/PATH}` to write instead; the kind is
+  matched ignoring case and spaces inside the braces are trimmed;
+- what a variable or a file holds is not resolved again; any other `${...}` is an error (with
+  "did you mean `${env:X}`?" for `${X}`), so a secret that contains `${` belongs in a file or a
+  variable; an unclosed `${` is text;
+- a variable that is not set, a missing or unreadable file and a non-UTF-8 file are
+  `ConfigurationValueException`s naming the key path and the reference (`Value at "db.password"
+  uses ${env:SHOP_DB_PASSWORD}, which is not set; ...`), and no message contains the value, the
+  invalid-value messages included; list elements are named by index.
+
+The Database module reads its connection keys with the same getters, so `${env:...}`,
+`${file:...}` and `${pluginfile:...}` mean the same everywhere.
 
 ## `cycle` and `isWithin`
 

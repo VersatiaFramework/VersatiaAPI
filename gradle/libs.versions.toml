@@ -9,6 +9,16 @@ commandapi = "12.1.0"
 snakeyaml = "2.4"
 # Exported by VersatiaAPI and loaded on the server from VersatiaCore's libraries: (see docs/build.md)
 coroutines = "1.11.0"
+# Database module: Paper downloads HikariCP and these drivers through the module's plugin.yml libraries:
+hikaricp = "7.1.0"
+mariadb = "3.5.10"
+postgresql = "42.7.14"
+h2 = "2.5.252"
+# Database module: provided by Paper 1.21.4 on the server class loader, never shipped
+sqlite-jdbc = "3.47.0.0"
+mysql-connector = "9.1.0"
+testcontainers = "2.0.5"
+slf4j = "2.0.9"
 
 [libraries]
 paper-api = { module = "io.papermc.paper:paper-api", version.ref = "paper" }
@@ -22,6 +32,14 @@ snakeyaml = { module = "org.yaml:snakeyaml", version.ref = "snakeyaml" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-core-jvm = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm", version.ref = "coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
+hikaricp = { module = "com.zaxxer:HikariCP", version.ref = "hikaricp" }
+mariadb-java-client = { module = "org.mariadb.jdbc:mariadb-java-client", version.ref = "mariadb" }
+postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+h2 = { module = "com.h2database:h2", version.ref = "h2" }
+sqlite-jdbc = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite-jdbc" }
+mysql-connector-j = { module = "com.mysql:mysql-connector-j", version.ref = "mysql-connector" }
+testcontainers-bom = { module = "org.testcontainers:testcontainers-bom", version.ref = "testcontainers" }
+slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
 # Version aligned by the JUnit BOM that kotlin("test") brings
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
 
