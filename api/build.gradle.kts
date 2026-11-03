@@ -6,7 +6,7 @@ plugins {
     `maven-publish`
 }
 
-group = "com.github.marcoral.versatia"
+group = "dev.versatia"
 version = providers.gradleProperty("versatiaVersion").get()
 
 base {
@@ -41,7 +41,7 @@ kotlin {
     compilerOptions {
         jvmTarget = JvmTarget.JVM_21
         // Framework code may use the plumbing marked @VersatiaInternalApi; see docs/api.md of VersatiaAPI
-        optIn.add("com.github.marcoral.versatia.VersatiaInternalApi")
+        optIn.add("dev.versatia.VersatiaInternalApi")
     }
 }
 

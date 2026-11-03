@@ -111,7 +111,7 @@ walk it. Changing how VersatiaCore iterates therefore never requires regeneratin
 ### Format version
 
 The format has its own `major.minor` version (`VersatiaPluginDescriptor.FORMAT_VERSION`, currently
-`1.6`), independent of the library version. A runtime accepts exactly the version it was built
+`1.0`), independent of the library version. A runtime accepts exactly the version it was built
 with and rejects any other with a message naming the plugin, both versions and the fix. The
 generator writes the two numbers as literal `Int` properties (`formatMajor`, `formatMinor`), so a
 runtime can read them from any descriptor before deciding what to do with it; for the same reason
@@ -232,7 +232,7 @@ class TimedEnhancementProcessor : EnhancementProcessor {
 
 ## Dependency injection
 
-Four annotations in `com.github.marcoral.versatia.di`:
+Four annotations in `dev.versatia.di`:
 
 | Annotation          | Target           | Meaning                                                              |
 |---------------------|------------------|----------------------------------------------------------------------|
@@ -243,7 +243,7 @@ Four annotations in `com.github.marcoral.versatia.di`:
 
 Each scope inherits `@Bean` and names its processor: `LocalBeanEnhancementProcessor`,
 `ExposeSingletonEnhancementProcessor`, `ExposePrototypeEnhancementProcessor` in
-`com.github.marcoral.versatia.di` of VersatiaCore (`BeanProcessors`). All three run at
+`dev.versatia.di` of VersatiaCore (`BeanProcessors`). All three run at
 `PLUGIN_START_ONLY`, and a scope that sends one of them anything else is a compile error: beans
 can only be declared when the plugin starts.
 
@@ -405,35 +405,35 @@ object VersatiaDescriptor : VersatiaPluginDescriptor {
   override val elements: List<EnhancedElement>
     get() = listOf(
       EnhancedElement(
-        processorClass = "com.github.marcoral.versatia.di.PluginBeanEnhancementProcessor",
+        processorClass = "dev.versatia.di.PluginBeanEnhancementProcessor",
         phase = Phase.PLUGIN_RELOAD_OR_START,
-        annotation = AnnotationOccurrence("com.github.marcoral.versatia.di.PluginBean"),
+        annotation = AnnotationOccurrence("dev.versatia.di.PluginBean"),
         target = PluginTarget(
           className = "com.example.alpha.AlphaPlugin",
-          assignableTypes = listOf("com.example.alpha.AlphaPlugin", "com.github.marcoral.versatia.VersatiaPlugin", "org.bukkit.plugin.java.JavaPlugin", "org.bukkit.plugin.Plugin", /* ... */),
+          assignableTypes = listOf("com.example.alpha.AlphaPlugin", "dev.versatia.VersatiaPlugin", "org.bukkit.plugin.java.JavaPlugin", "org.bukkit.plugin.Plugin", /* ... */),
           annotations = emptyList(),
         ),
-        origin = "com.github.marcoral.versatia.VersatiaPlugin",
+        origin = "dev.versatia.VersatiaPlugin",
       ),
       EnhancedElement(
-        processorClass = "com.github.marcoral.versatia.resources.ExtractResourcesEnhancementProcessor",
+        processorClass = "dev.versatia.resources.ExtractResourcesEnhancementProcessor",
         phase = Phase.PLUGIN_RELOAD_OR_START,
-        annotation = AnnotationOccurrence("com.github.marcoral.versatia.resources.ExtractResources"),
+        annotation = AnnotationOccurrence("dev.versatia.resources.ExtractResources"),
         target = PluginTarget(/* the same */),
-        origin = "com.github.marcoral.versatia.VersatiaPlugin",
+        origin = "dev.versatia.VersatiaPlugin",
       ),
       EnhancedElement(
-        processorClass = "com.github.marcoral.versatia.task.PluginScopeEnhancementProcessor",
+        processorClass = "dev.versatia.task.PluginScopeEnhancementProcessor",
         phase = Phase.PLUGIN_START_ONLY,
-        annotation = AnnotationOccurrence("com.github.marcoral.versatia.task.RunBackgroundTasks"),
+        annotation = AnnotationOccurrence("dev.versatia.task.RunBackgroundTasks"),
         target = PluginTarget(/* the same */),
-        origin = "com.github.marcoral.versatia.VersatiaPlugin",
+        origin = "dev.versatia.VersatiaPlugin",
       ),
       // ... and the same at Phase.PLUGIN_STOP
       EnhancedElement(
-        processorClass = "com.github.marcoral.versatia.di.LocalBeanEnhancementProcessor",
+        processorClass = "dev.versatia.di.LocalBeanEnhancementProcessor",
         phase = Phase.PLUGIN_START_ONLY,
-        annotation = AnnotationOccurrence("com.github.marcoral.versatia.di.LocalBean"),
+        annotation = AnnotationOccurrence("dev.versatia.di.LocalBean"),
         target = ClassTarget(
           className = "com.example.alpha.ConsoleGreeter",
           assignableTypes = listOf("com.example.alpha.ConsoleGreeter", "com.example.alpha.Greeter"),
@@ -444,15 +444,15 @@ object VersatiaDescriptor : VersatiaPluginDescriptor {
         origin = "com.example.alpha.ConsoleGreeter",
       ),
       EnhancedElement(
-        processorClass = "com.github.marcoral.versatia.di.LocalBeanEnhancementProcessor",
+        processorClass = "dev.versatia.di.LocalBeanEnhancementProcessor",
         phase = Phase.PLUGIN_START_ONLY,
-        annotation = AnnotationOccurrence("com.github.marcoral.versatia.di.LocalBean"),
+        annotation = AnnotationOccurrence("dev.versatia.di.LocalBean"),
         target = ClassTarget(
           className = "com.example.alpha.HiddenAudit",
           assignableTypes = listOf("com.example.alpha.HiddenAudit"),
           annotations = emptyList(),
           constructorParameters = listOf(
-            Parameter("com.example.alpha.Greeter", listOf(AnnotationOccurrence("com.github.marcoral.versatia.di.Qualifier", mapOf("value" to "consoleGreeter")))),
+            Parameter("com.example.alpha.Greeter", listOf(AnnotationOccurrence("dev.versatia.di.Qualifier", mapOf("value" to "consoleGreeter")))),
             Parameter("com.example.alpha.Ticket"),
           ),
           instantiator = Instantiator.Reflective("com.example.alpha.HiddenAudit", listOf("com.example.alpha.Greeter", "com.example.alpha.Ticket")),
@@ -535,7 +535,7 @@ reports it if it does not. The generated `elements` list is built in private fun
 
 ## Auto-invoked functions
 
-`@AutoInvoke(phase)` (`com.github.marcoral.versatia.lifecycle`) marks a function the runtime calls
+`@AutoInvoke(phase)` (`dev.versatia.lifecycle`) marks a function the runtime calls
 at the given phase. It replaces overriding `onEnable`/`onDisable`; `VersatiaPlugin` leaves nothing
 to override.
 
@@ -569,7 +569,7 @@ lifetime, so reload- and stop-phase functions can use them too.
 
 ## Configuration values
 
-`@Value(key, file = "config.yml", mapper = NoMapper::class)` (`com.github.marcoral.versatia.config`)
+`@Value(key, file = "config.yml", mapper = NoMapper::class)` (`dev.versatia.config`)
 marks a mutable property the runtime sets from a YAML file of the plugin's data folder at
 `PLUGIN_RELOAD_OR_START`:
 
@@ -820,8 +820,8 @@ plugins {
 }
 
 dependencies {
-    implementation("com.github.marcoral.versatia:VersatiaAPI:0.0.1")
-    ksp("com.github.marcoral.versatia:VersatiaAPI-ksp:0.0.1")
+    implementation("dev.versatia:VersatiaAPI:0.0.1")
+    ksp("dev.versatia:VersatiaAPI-ksp:0.0.1")
 }
 ```
 

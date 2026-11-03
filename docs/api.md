@@ -18,7 +18,7 @@ that deliver no feature of their own but are needed for the framework to work.
 
 | Package                  | Contents                                                                  |
 |--------------------------|---------------------------------------------------------------------------|
-| `com.github.marcoral.versatia` | the enhancement mechanism (`@VersatiaEnhancement`, `@VersatiaAttribute`, `@VersatiaSubclassEnhancement`, `EnhancementProcessor`, `EnhancementContext` with its `classLoader` extension and the processor helpers `targetAs`, `receiverOf`, `inject`, `failure`, `StateStore`, `StateKey`, `Phase`, `LifecycleEvent`, `EnhancementException`, `@VersatiaDisabler`, `@VersatiaInternalApi`), the plugin bootstrap (`VersatiaPlugin`, `VersatiaEngine`, `@DisableVersatiaFeatures`) and the attributes the runtime reads itself (`@ConditionalOnPlugin`, `@FriendlyName`, with `PluginRegistry` reading friendly names back); the static shortcuts on `VersatiaEngine` (`VersatiaEngineExtensions.kt`) and `ServiceNotRegisteredException` |
+| `dev.versatia` | the enhancement mechanism (`@VersatiaEnhancement`, `@VersatiaAttribute`, `@VersatiaSubclassEnhancement`, `EnhancementProcessor`, `EnhancementContext` with its `classLoader` extension and the processor helpers `targetAs`, `receiverOf`, `inject`, `failure`, `StateStore`, `StateKey`, `Phase`, `LifecycleEvent`, `EnhancementException`, `@VersatiaDisabler`, `@VersatiaInternalApi`), the plugin bootstrap (`VersatiaPlugin`, `VersatiaEngine`, `@DisableVersatiaFeatures`) and the attributes the runtime reads itself (`@ConditionalOnPlugin`, `@FriendlyName`, with `PluginRegistry` reading friendly names back); the static shortcuts on `VersatiaEngine` (`VersatiaEngineExtensions.kt`) and `ServiceNotRegisteredException` |
 | `engine.descriptor`      | Model of the generated descriptor: `VersatiaPluginDescriptor`, `EnhancedElement`, `AnnotationOccurrence`, `ClassTarget`, `FunctionTarget`, `PropertyTarget`, `PluginTarget`, `MemberOwner`, `Parameter`, `TypeReference`, `Instantiator` with `DefaultArgument`, `Invoker`, `Setter`, `DescriptorVersion` |
 | `di`                     | Bean scopes: `@Bean`, `@LocalBean`, `@ExposeSingleton`, `@ExposePrototype`, `@PluginBean`; `@Qualifier`, `@Primary`; `Reloadable`, beans reloaded with their plugin; `BeanResolver`, the injection contract for processors; `BeanProcessors`, `BeanNames` |
 | `lifecycle`              | `@AutoInvoke`, functions called at a lifecycle phase; `LifecycleProcessors` |
@@ -29,7 +29,7 @@ that deliver no feature of their own but are needed for the framework to work.
 | `util.*`                 | Independent helpers, described below                                      |
 
 The framework packages are documented in [enhancements.md](enhancements.md). All helpers live
-under `com.github.marcoral.versatia.util`, grouped into sub-packages by the domain they touch, not
+under `dev.versatia.util`, grouped into sub-packages by the domain they touch, not
 by the kind of helper they are. Package names below are relative to `util`.
 
 | Package        | Contents                                                                                 |
@@ -78,7 +78,7 @@ signature names a marked type.
 
 The `api` and `ksp` modules, VersatiaCore and module implementations such as
 VersatiaModule-DatabaseImpl opt in for the whole module
-(`optIn.add("com.github.marcoral.versatia.VersatiaInternalApi")` in `kotlin.compilerOptions`).
+(`optIn.add("dev.versatia.VersatiaInternalApi")` in `kotlin.compilerOptions`).
 The generated descriptor opts in for its own file with `@file:OptIn(VersatiaInternalApi::class)`,
 so plugins compile without warnings and without opting in themselves.
 

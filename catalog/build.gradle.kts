@@ -3,7 +3,7 @@ plugins {
     `maven-publish`
 }
 
-group = "com.github.marcoral.versatia"
+group = "dev.versatia"
 val versatiaVersion = providers.gradleProperty("versatiaVersion").get()
 version = versatiaVersion
 
@@ -12,10 +12,10 @@ catalog {
     versionCatalog {
         from(files("../gradle/libs.versions.toml"))
         version("versatia", versatiaVersion)
-        library("versatia-api", "com.github.marcoral.versatia", "VersatiaAPI").versionRef("versatia")
-        library("versatia-ksp", "com.github.marcoral.versatia", "VersatiaAPI-ksp").versionRef("versatia")
-        library("versatia-starter", "com.github.marcoral.versatia", "VersatiaStarter").versionRef("versatia")
-        library("versatia-database", "com.github.marcoral.versatia", "VersatiaModule-Database").versionRef("versatia")
+        library("versatia-api", "dev.versatia", "VersatiaAPI").versionRef("versatia")
+        library("versatia-ksp", "dev.versatia", "VersatiaAPI-ksp").versionRef("versatia")
+        library("versatia-starter", "dev.versatia", "VersatiaStarter").versionRef("versatia")
+        library("versatia-database", "dev.versatia", "VersatiaModule-Database").versionRef("versatia")
     }
 }
 

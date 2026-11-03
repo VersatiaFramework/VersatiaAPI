@@ -7,9 +7,9 @@ build scripts and what each module exports to projects that depend on it.
 
 | Module | Artifact                                             | Purpose                                              |
 |--------|------------------------------------------------------|------------------------------------------------------|
-| `api`  | `com.github.marcoral.versatia:VersatiaAPI`       | public API, helpers, annotations; on the server      |
-| `ksp`  | `com.github.marcoral.versatia:VersatiaAPI-ksp`   | KSP processor generating descriptors; compile time   |
-| `catalog` | `com.github.marcoral.versatia:VersatiaCatalog` | Gradle version catalog shared by every Versatia build |
+| `api`  | `dev.versatia:VersatiaAPI`       | public API, helpers, annotations; on the server      |
+| `ksp`  | `dev.versatia:VersatiaAPI-ksp`   | KSP processor generating descriptors; compile time   |
+| `catalog` | `dev.versatia:VersatiaCatalog` | Gradle version catalog shared by every Versatia build |
 
 The root project only declares the Kotlin plugin (`apply false`) and the shared repositories
 (`dependencyResolutionManagement` in `settings.gradle.kts`). The framework version is
@@ -28,7 +28,7 @@ import it in `settings.gradle.kts`:
 dependencyResolutionManagement {
     versionCatalogs {
         create("libs") {
-            from("com.github.marcoral.versatia:VersatiaCatalog:${providers.gradleProperty("versatiaVersion").get()}")
+            from("dev.versatia:VersatiaCatalog:${providers.gradleProperty("versatiaVersion").get()}")
         }
     }
 }
@@ -136,7 +136,7 @@ For now the only target is the local Maven repository:
 ./gradlew publishToMavenLocal
 ```
 
-Artifacts land in `~/.m2/repository/com/github/marcoral/versatia/VersatiaAPI/<version>/` and
+Artifacts land in `~/.m2/repository/dev/versatia/VersatiaAPI/<version>/` and
 `.../VersatiaAPI-ksp/<version>/`. A remote repository can be added later under
 `publishing.repositories` without changing the publications.
 

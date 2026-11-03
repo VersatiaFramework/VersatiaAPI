@@ -54,7 +54,7 @@ Run this after every change that a dependent project should see. It publishes bo
 dependencyResolutionManagement {
     repositoriesMode = RepositoriesMode.FAIL_ON_PROJECT_REPOS
     repositories {
-        mavenLocal { content { includeGroup("com.github.marcoral.versatia") } }
+        mavenLocal { content { includeGroup("dev.versatia") } }
         mavenCentral()
         maven("https://repo.papermc.io/repository/maven-public/")
     }
@@ -69,15 +69,15 @@ plugins {
 }
 
 dependencies {
-    implementation("com.github.marcoral.versatia:VersatiaAPI:0.0.1")
-    ksp("com.github.marcoral.versatia:VersatiaAPI-ksp:0.0.1")
+    implementation("dev.versatia:VersatiaAPI:0.0.1")
+    ksp("dev.versatia:VersatiaAPI-ksp:0.0.1")
 }
 ```
 
 No further configuration: the processor finds the plugin's main class in the sources and places the
 generated descriptor next to it.
 
-The plugin's main class extends `com.github.marcoral.versatia.VersatiaPlugin` and its
+The plugin's main class extends `dev.versatia.VersatiaPlugin` and its
 `plugin.yml` lists `VersatiaCore` under `depend:` and does not list Kotlin under `libraries:`
 (VersatiaCore provides it; see [docs/enhancements.md](docs/enhancements.md#setting-up-a-plugin-build)).
 
@@ -90,7 +90,7 @@ See [docs/build.md](docs/build.md) for how this is set up.
 
 ## Project layout
 
-- `api/src/main/kotlin/` – library sources under `com.github.marcoral.versatia`, organised by
+- `api/src/main/kotlin/` – library sources under `dev.versatia`, organised by
   feature: the root package (enhancement mechanism, `VersatiaPlugin`, `VersatiaEngine` and its
   static shortcuts),
   `engine.descriptor` (model of the generated descriptor), `di` (bean scopes), `lifecycle`
