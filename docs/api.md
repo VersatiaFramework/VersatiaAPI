@@ -77,7 +77,7 @@ it, and never one a custom processor needs: the marker also covers every declara
 signature names a marked type.
 
 The `api` and `ksp` modules, VersatiaCore and module implementations such as
-VersatiaModule-MessagesImpl opt in for the whole module
+VersatiaModule-DatabaseImpl opt in for the whole module
 (`optIn.add("com.github.marcoral.versatia.VersatiaInternalApi")` in `kotlin.compilerOptions`).
 The generated descriptor opts in for its own file with `@file:OptIn(VersatiaInternalApi::class)`,
 so plugins compile without warnings and without opting in themselves.

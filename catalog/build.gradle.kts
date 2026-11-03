@@ -15,7 +15,6 @@ catalog {
         library("versatia-api", "com.github.marcoral.versatia", "VersatiaAPI").versionRef("versatia")
         library("versatia-ksp", "com.github.marcoral.versatia", "VersatiaAPI-ksp").versionRef("versatia")
         library("versatia-starter", "com.github.marcoral.versatia", "VersatiaStarter").versionRef("versatia")
-        library("versatia-messages", "com.github.marcoral.versatia", "VersatiaModule-Messages").versionRef("versatia")
         library("versatia-database", "com.github.marcoral.versatia", "VersatiaModule-Database").versionRef("versatia")
     }
 }

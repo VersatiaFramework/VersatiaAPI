@@ -21,7 +21,7 @@ which this build uses as its own `libs` catalog.
 
 The `catalog` module applies `version-catalog` and publishes `gradle/libs.versions.toml` as
 `VersatiaCatalog`, adding the version `versatia` (= `versatiaVersion`) and the libraries
-`versatia-api`, `versatia-ksp`, `versatia-starter` and `versatia-messages`. The other repositories
+`versatia-api`, `versatia-ksp`, `versatia-starter` and `versatia-database`. The other repositories
 import it in `settings.gradle.kts`:
 
 ```kotlin
@@ -36,7 +36,7 @@ dependencyResolutionManagement {
 
 and write `alias(libs.plugins.kotlin.jvm)`, `alias(libs.plugins.ksp)`, `libs.paper.api`,
 `libs.versatia.starter` and so on. A version bump is one edit in `libs.versions.toml` plus
-`./gradlew publishToMavenLocal` here. VersatiaModule-Messages is the exception: it builds without
+`./gradlew publishToMavenLocal` here. VersatiaModule-Database is the exception: it builds without
 any Versatia artifact, so it keeps literal versions equal to the catalog's.
 
 `archivesName` and the publication `artifactId` are set explicitly, so the artifacts keep their
