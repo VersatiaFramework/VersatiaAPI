@@ -104,3 +104,7 @@ See [docs/build.md](docs/build.md) for how this is set up.
 - `docs/enhancements.md` – descriptor format, KSP setup, dependency injection rules
 - `docs/api.md` – package overview and API conventions
 - `docs/build.md` – modules, build and publishing details
+
+## License
+
+Apache License 2.0; see [LICENSE](LICENSE).
