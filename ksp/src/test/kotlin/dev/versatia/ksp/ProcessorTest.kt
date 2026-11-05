@@ -43,7 +43,7 @@ abstract class ProcessorTest {
     ): JvmCompilationResult = KotlinCompilation().apply {
         this.sources = sources.toList() + listOfNotNull(alphaPlugin.takeIf { mainClass == DEFAULT_MAIN })
         inheritClassPath = true
-        jvmTarget = "21"
+        jvmTarget = "25"
         messageOutputStream = System.out
         configureKsp {
             symbolProcessorProviders += VersatiaSymbolProcessorProvider()

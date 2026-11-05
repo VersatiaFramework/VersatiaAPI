@@ -46,7 +46,7 @@ the `ksp -> api` project dependency from `api`'s publication, so the published `
 
 ## Toolchain
 
-- Paper 1.21.4 requires Java 21, so both modules target JVM 21. Any JDK 21 or newer can compile
+- Paper 26.3 requires Java 25, so both modules target JVM 25. Any JDK 25 or newer can compile
   the project; no Gradle toolchain download is configured.
 - Gradle comes from the wrapper (`gradlew`), so nothing has to be installed globally.
 - `withSourcesJar()` publishes a sources JAR next to each binary.

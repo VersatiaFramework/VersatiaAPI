@@ -4,7 +4,7 @@ kotlin = "2.4.20"
 ksp = "2.3.12"
 kotlinpoet = "2.4.0"
 kctfork = "0.14.0"
-paper = "1.21.4-R0.1-SNAPSHOT"
+paper = "26.3.build.241-stable"
 commandapi = "12.1.0"
 snakeyaml = "2.4"
 # Exported by VersatiaAPI and loaded on the server from VersatiaCore's libraries: (see docs/build.md)
@@ -14,9 +14,9 @@ hikaricp = "7.1.0"
 mariadb = "3.5.10"
 postgresql = "42.7.14"
 h2 = "2.5.252"
-# Database module: provided by Paper 1.21.4 on the server class loader, never shipped
-sqlite-jdbc = "3.47.0.0"
-mysql-connector = "9.1.0"
+# Database module: provided by Paper 26.3 on the server class loader, never shipped
+sqlite-jdbc = "3.49.1.0"
+mysql-connector = "9.2.0"
 testcontainers = "2.0.5"
 slf4j = "2.0.9"
 

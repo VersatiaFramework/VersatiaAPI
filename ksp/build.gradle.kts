@@ -28,14 +28,14 @@ dependencies {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
     withSourcesJar()
 }
 
 kotlin {
     compilerOptions {
-        jvmTarget = JvmTarget.JVM_21
+        jvmTarget = JvmTarget.JVM_25
         // Framework code may use the plumbing marked @VersatiaInternalApi; see docs/api.md of VersatiaAPI
         optIn.add("dev.versatia.VersatiaInternalApi")
     }

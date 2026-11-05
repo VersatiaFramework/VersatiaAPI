@@ -1,6 +1,6 @@
 # VersatiaAPI
 
-Foundation library of the **Versatia framework** for Paper **1.21.4**, written in Kotlin and built
+Foundation library of the **Versatia framework** for Paper **26.3**, written in Kotlin and built
 with Gradle.
 
 VersatiaAPI is not a server plugin. It is what Versatia-based plugins compile against, in two
@@ -24,7 +24,7 @@ injection are in [docs/enhancements.md](docs/enhancements.md); the helper packag
 
 ## Requirements
 
-- JDK 21 or newer
+- JDK 25 or newer
 - Nothing else. Gradle is downloaded automatically by the wrapper (`gradlew`).
 
 ## Building

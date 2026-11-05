@@ -11,7 +11,7 @@ class PluginYmlTest {
             name: Alpha
             version: '1.0'
             main: com.example.alpha.AlphaPlugin
-            api-version: '1.21'
+            api-version: '26.3'
         """.trimIndent()
         assertEquals("com.example.alpha.AlphaPlugin", PluginYml.mainClassOf(yml))
     }
