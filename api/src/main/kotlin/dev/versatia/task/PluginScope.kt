@@ -1,8 +1,10 @@
 package dev.versatia.task
 
+import dev.versatia.VersatiaEngine
 import kotlin.time.Duration
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import org.bukkit.plugin.Plugin
 
 /**
  * The coroutines of the plugin this is injected into, also as `CoroutineScope`: they run on the
@@ -34,3 +36,10 @@ interface PluginScope : CoroutineScope {
      */
     fun <T : Any> perPlayer(keepAfterQuit: Duration = Duration.ZERO): PlayerValues<T>
 }
+
+/**
+ * This plugin's [PluginScope], the instance its beans are injected, so the main class writes
+ * `scope.launch { }` with nothing injected. It is there from the moment the plugin's beans exist
+ * until the plugin stops; a constructor takes [PluginScope] as a parameter instead.
+ */
+val Plugin.scope get() = VersatiaEngine.instance.defaultBean(this, PluginScope::class)

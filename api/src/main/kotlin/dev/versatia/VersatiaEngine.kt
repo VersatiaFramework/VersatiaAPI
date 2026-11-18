@@ -1,5 +1,6 @@
 package dev.versatia
 
+import kotlin.reflect.KClass
 import org.bukkit.Bukkit
 import org.bukkit.plugin.Plugin
 
@@ -22,6 +23,10 @@ interface VersatiaEngine {
     /** Runs the plugin's stop-phase enhancements and drops everything kept for it. */
     @VersatiaInternalApi
     fun disable(plugin: Plugin)
+
+    /** The instance of the default bean [type] that [plugin]'s beans are injected, behind `plugin.text`, `plugin.messages` and `plugin.scope`. */
+    @VersatiaInternalApi
+    fun <T : Any> defaultBean(plugin: Plugin, type: KClass<T>): T
 
     /**
      * Also the static entry point to server-wide work, declared in VersatiaEngineExtensions.kt:

@@ -6,7 +6,9 @@ import net.kyori.adventure.text.Component
  * How a value appears in text: [component] is what `{name}` inserts, [properties] what
  * `{name.property}` reaches. Every part is evaluated only when a text asks for it, and a property
  * may return anything an argument may be, including another presentable value, so properties
- * chain: `{player.location.x}`.
+ * chain: `{player.location.x}`. The component stands out by itself wherever a text inserts it,
+ * in the style [Presentable.style] or the registration names, `accent` otherwise; what it formats
+ * itself wins over that style.
  */
 class Presentation internal constructor(
     val component: (() -> Component)?,
@@ -35,4 +37,12 @@ fun presentation(build: PresentationBuilder.() -> Unit) = PresentationBuilder().
 /** A value that knows how it appears in text; takes precedence over any registered presentation. */
 fun interface Presentable {
     fun presentation(): Presentation
+
+    /**
+     * The server's style this value is shown in, as `player` is the style of a player: a class
+     * answering `"quest"` makes `{quest}` look like `<quest>{quest}</quest>`. Without one, and where
+     * the server defines no style of that name, the value takes `accent`. A name that cannot be a
+     * style fails with an [InvalidStyleNameException] when the value is shown.
+     */
+    val style: String? get() = null
 }
