@@ -7,6 +7,7 @@ import dev.versatia.ksp.model.ClassDeclaration
 import dev.versatia.ksp.model.Enhancement
 import dev.versatia.ksp.model.EnhancedAnnotation
 import dev.versatia.ksp.model.ParameterDeclaration
+import dev.versatia.ksp.model.TypeDeclaration
 import com.google.devtools.ksp.symbol.KSNode
 import com.squareup.kotlinpoet.ClassName
 
@@ -26,11 +27,12 @@ internal data class BeanDeclaration(
     /** True when generated code in the plugin's package can call the constructor directly. */
     val reachable: Boolean,
     val node: KSNode? = null,
+    val genericSupertypes: List<TypeDeclaration> = emptyList(),
 ) {
     val dependencies get() = parameters.filter { it.suppliedBy == null }.map { it.toDependency() }
 
     /** The facts the descriptor's `ClassTarget` records. */
-    fun asClass() = ClassDeclaration(type, annotations, parameters, assignableTypes, reachable, node = node)
+    fun asClass() = ClassDeclaration(type, annotations, parameters, assignableTypes, reachable, node = node, genericSupertypes = genericSupertypes)
 }
 
 /**

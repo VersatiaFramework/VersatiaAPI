@@ -61,7 +61,7 @@ annotation class LocalBean
   compiles against VersatiaAPI only, and the processor is in VersatiaCore or in another plugin.
   VersatiaAPI keeps the names of the built-in processors in `BeanProcessors` (`di`),
   `LifecycleProcessors` (`lifecycle`), `ConfigProcessors` (`config`), `ResourceProcessors`
-  (`resources`), `EventProcessors` (`event`) and `TaskProcessors` (`task`). A mistyped name is found when the plugin enables,
+  (`resources`), `EventProcessors` (`event`), `TaskProcessors` (`task`) and `TextProcessors` (`text`). A mistyped name is found when the plugin enables,
   not at compile time.
 - `enhancementPhase` or `enhancementPhaseParamRefName` say when the processor runs; see
   [Phases](#phases).
@@ -84,7 +84,10 @@ The descriptor records facts about the annotated code, never what a feature make
 `Any`), the attributes on the class, the constructor parameters (each a `Parameter`: type, the
 attributes on it, `optional` when it has a default value, and `suppliedBy` naming the processor
 that supplies the argument instead of a bean, as `ConfigProcessors.VALUE` does for a `@Value`
-constructor property) and an `Instantiator`. A `FunctionTarget` has the declaring class (Kotlin and JVM
+constructor property), an `Instantiator` and its `genericSupertypes`: each generic supertype as a
+`TypeReference` with the type arguments the class gives it, those reached through a generic
+superclass included, so `Presenter<Player>` for `class Card : Presenter<Player>` (a supertype whose
+arguments are not all class types, such as a star projection, is left out). A `FunctionTarget` has the declaring class (Kotlin and JVM
 names), the function name, who holds the instance (`MemberOwner`: `PLUGIN`, `OBJECT`,
 `INSTANCE` for a class whose instance the processor must obtain, or, for a `@Value` property only,
 `SUBCLASS_INSTANCE` for a class a subclass enhancement creates without it being a bean, such as a
@@ -111,7 +114,7 @@ walk it. Changing how VersatiaCore iterates therefore never requires regeneratin
 ### Format version
 
 The format has its own `major.minor` version (`VersatiaPluginDescriptor.FORMAT_VERSION`, currently
-`1.0`), independent of the library version. A runtime accepts exactly the version it was built
+`1.1`), independent of the library version. A runtime accepts exactly the version it was built
 with and rejects any other with a message naming the plugin, both versions and the fix. The
 generator writes the two numbers as literal `Int` properties (`formatMajor`, `formatMinor`), so a
 runtime can read them from any descriptor before deciding what to do with it; for the same reason
@@ -400,7 +403,7 @@ Generated for it (shortened):
 
 object VersatiaDescriptor : VersatiaPluginDescriptor {
   override val formatMajor: Int = 1
-  override val formatMinor: Int = 0
+  override val formatMinor: Int = 1
 
   override val elements: List<EnhancedElement>
     get() = listOf(
@@ -717,6 +720,20 @@ main class are registered as themselves. The generator lists subclass elements b
 elements, so listeners are registered before `@AutoInvoke` start functions run. Bukkit
 unregisters the listeners when the plugin is disabled. `@DisableVersatiaFeatures(registerListeners = true)`
 switches the feature off.
+
+## Server presentations
+
+`@ServerPresentation` (`text`) inherits `@LocalBean`, so the class carrying it is a local bean of
+its plugin, and adds an element for `ServerPresentationEnhancementProcessor`
+(`TextProcessors.SERVER_PRESENTATION`) at `PLUGIN_START_ONLY` on the same `ClassTarget`, with the
+annotation's `style` among its arguments. The class implements `Presenter<T>`; the generator
+records `T` as the argument of the `Presenter` entry of `genericSupertypes`, so the runtime reads
+the type from the descriptor instead of a generic signature. The compile-time checks
+(`ksp.text.ServerPresentationCheck`) reject a class that is no `Presenter`, one presenting a
+generic type or `Any`, and two classes of one plugin presenting the same type unless exactly one
+of them is `@Primary` for every combination of the plugins their `@ConditionalOnPlugin` names, the
+rule of [ambiguous dependencies](#compile-time-checks). The runtime applies the same rule between
+plugins; see `docs/messages.md` of VersatiaCore.
 
 ## Background tasks and coroutines
 

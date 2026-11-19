@@ -49,7 +49,10 @@ internal class SubclassCollector(
             clazz.isCompanionObject ->
                 reporter.fail(clazz, "$name is enhanced by $carrier but is a companion object, which the runtime does not reach; make it a named object")
             clazz.classKind == ClassKind.OBJECT ->
-                ClassDeclaration(clazz.toClassName(), attributes.of(clazz, clazz), emptyList(), clazz.assignableTypes(), clazz.isReachable(), isObject = true, node = clazz)
+                ClassDeclaration(
+                    clazz.toClassName(), attributes.of(clazz, clazz), emptyList(), clazz.assignableTypes(), clazz.isReachable(), isObject = true, node = clazz,
+                    genericSupertypes = clazz.genericSupertypes(),
+                )
             clazz.classKind == ClassKind.ENUM_CLASS ->
                 reporter.fail(clazz, "$name is enhanced by $carrier but is an enum class, whose constants the runtime cannot create; use a class or an object")
             clazz.classKind != ClassKind.CLASS || Modifier.INNER in clazz.modifiers ->

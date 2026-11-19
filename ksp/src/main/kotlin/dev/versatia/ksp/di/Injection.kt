@@ -12,6 +12,7 @@ import dev.versatia.ksp.declaration
 import dev.versatia.ksp.declared
 import dev.versatia.ksp.displayName
 import dev.versatia.ksp.expanded
+import dev.versatia.ksp.genericSupertypes
 import dev.versatia.ksp.isReachable
 import dev.versatia.ksp.model.AnnotationRef
 import dev.versatia.ksp.model.ClassDeclaration
@@ -69,6 +70,7 @@ internal class Injection(private val attributes: Attributes, private val reporte
             assignableTypes = clazz.assignableTypes(),
             reachable = clazz.isReachable() && constructor.isReachable() && parameters.allReachable(),
             node = clazz,
+            genericSupertypes = clazz.genericSupertypes(),
         )
     }
 

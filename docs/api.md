@@ -25,6 +25,8 @@ that deliver no feature of their own but are needed for the framework to work.
 | `config`                 | `@Value`, properties set from the plugin's YAML files at start and reload; `ValueTypes`, the types it reads by itself; `ValueMapper` and `NoMapper` for any other, `SectionMapper` for one written as a section; `PreviousValueTracking`, a cell keeping the value it replaced; `ConfigProcessors` |
 | `resources`              | `@ExtractResources`, files shipped in the JAR extracted to the data folder; `ResourceProcessors` |
 | `event`                  | `@RegisterListeners`, Bukkit listeners registered at start; `EventProcessors` |
+| `messages`               | `Messages`, a plugin's bank of texts read from its `messages/` files, and `Message`; the exceptions of loading and lookup |
+| `text`                   | `Text`, MiniMessage with arguments in braces, and `plugin.text`; `Argument`/`arg`, `Arguments`, `ArgumentTag`; `Presentation` with its builder, `Presentable` for a plugin's own types, `Presenter` and `@ServerPresentation` for a presentation every plugin uses; the `TextException`s; `TextProcessors` |
 | `task`                   | Coroutines of a plugin: `BackgroundTask`, run as long as the plugin, and `@RunBackgroundTasks`; `PluginScope`, injected; `Condition`, `RecheckTrigger`, `recheckOn` and its subject shorthands (`SubjectTriggers.kt`); `delayTicks`, `delayTick`, `condition` (`ServerClock.kt`); `everyTicks`, `every` (`Repetition.kt`); `awaitUntil`, `runOnceWhile`, `whenever` (`Conditions.kt`); `KeyedJobs` and `keyedJobs()`; `ServerClock` and `TaskProcessors` (both internal plumbing) |
 | `util.*`                 | Independent helpers, described below                                      |
 
@@ -59,7 +61,7 @@ compiler warning saying it is internal plumbing that may change without notice:
 
 | Declaration                                                         | Used by                                   |
 |---------------------------------------------------------------------|-------------------------------------------|
-| `BeanProcessors`, `LifecycleProcessors`, `ConfigProcessors`, `ResourceProcessors`, `EventProcessors`, `TaskProcessors` | the annotations declaring the built-in enhancements, the `ksp` module, VersatiaCore |
+| `BeanProcessors`, `LifecycleProcessors`, `ConfigProcessors`, `ResourceProcessors`, `EventProcessors`, `TaskProcessors`, `TextProcessors` | the annotations declaring the built-in enhancements, the `ksp` module, VersatiaCore |
 | `ServerClock`                                                       | the `task` helpers, which find it in a coroutine's context; VersatiaCore implements it, tests fake it |
 | `ValueTypes`                                                        | the `@Value` checks in `ksp` and the value processor |
 | `VersatiaPluginDescriptor`, `DescriptorVersion`                     | the generated descriptor, the descriptor loader |

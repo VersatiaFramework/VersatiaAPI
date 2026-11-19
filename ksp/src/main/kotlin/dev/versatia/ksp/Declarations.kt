@@ -50,6 +50,36 @@ internal fun KSType.declared(): TypeDeclaration? {
     return TypeDeclaration(clazz.toClassName(), arguments, isMarkedNullable)
 }
 
+/**
+ * The generic supertypes of this class with the type arguments it gives them, the type parameters
+ * of a generic superclass replaced by what they stand for: `Card : Base<Player>()` over
+ * `Base<T : Any> : Presenter<T>` gives `Presenter<Player>`. A supertype reached twice counts once;
+ * one with an argument that is not a class type, such as a star projection, is left out.
+ */
+internal fun KSClassDeclaration.genericSupertypes(): List<TypeDeclaration> {
+    val found = LinkedHashMap<ClassName, TypeDeclaration?>()
+    fun visit(declaration: KSClassDeclaration, bound: Map<String, TypeDeclaration?>) {
+        for (reference in declaration.superTypes) {
+            val type = reference.resolve().expanded()
+            val supertype = type.declaration as? KSClassDeclaration ?: continue
+            val name = supertype.toClassName()
+            if (name in found) continue
+            val arguments = type.arguments.map { it.type?.resolve()?.expanded()?.declaredIn(bound) }
+            found[name] = if (arguments.isEmpty() || null in arguments) null else TypeDeclaration(name, arguments.filterNotNull())
+            visit(supertype, supertype.typeParameters.map { it.name.asString() }.zip(arguments).toMap())
+        }
+    }
+    visit(this, emptyMap())
+    return found.values.filterNotNull()
+}
+
+/** This type as the descriptor records it, with the type parameters in [bound] replaced; null when a part of it is not a class type. */
+private fun KSType.declaredIn(bound: Map<String, TypeDeclaration?>): TypeDeclaration? = when (val declaration = declaration) {
+    is KSTypeParameter -> bound[declaration.name.asString()]?.let { if (isMarkedNullable) it.copy(nullable = true) else it }
+    is KSClassDeclaration -> TypeDeclaration(declaration.toClassName(), arguments.map { it.type?.resolve()?.expanded()?.declaredIn(bound) ?: return null }, isMarkedNullable)
+    else -> null
+}
+
 /** Whether generated code may name this type with all its type arguments. */
 internal fun KSType.isReachable(): Boolean = declaration.isReachable() && arguments.all { it.type?.resolve()?.expanded()?.isReachable() == true }
 

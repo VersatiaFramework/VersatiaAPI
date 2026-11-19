@@ -86,6 +86,13 @@ data class ClassTarget(
     override val annotations: List<AnnotationOccurrence>,
     val constructorParameters: List<Parameter>,
     val instantiator: Instantiator,
+    /**
+     * The generic supertypes of the class with the type arguments it gives them, those reached
+     * through a generic superclass included: `dev.versatia.text.Presenter<org.bukkit.entity.Player>`
+     * for a class implementing `Presenter<Player>`. A supertype with an argument that is not a class
+     * type, such as a star projection, is left out.
+     */
+    val genericSupertypes: List<TypeReference> = emptyList(),
 ) : ElementTarget
 
 /** The plugin's main class. Bukkit creates the instance; processors only get to use it. */

@@ -59,6 +59,8 @@ internal data class ClassDeclaration(
     val reachable: Boolean,
     val isObject: Boolean = false,
     val node: KSNode? = null,
+    /** The generic supertypes with the type arguments the class gives them. */
+    val genericSupertypes: List<TypeDeclaration> = emptyList(),
 )
 
 /** A class matched by a subclass enhancement; [clazz] is null when the match is the plugin's main class. */

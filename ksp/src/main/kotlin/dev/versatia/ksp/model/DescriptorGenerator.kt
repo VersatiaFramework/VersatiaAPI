@@ -185,6 +185,7 @@ internal object DescriptorGenerator {
         .add("annotations = %L,\n", occurrences(clazz.annotations))
         .add("constructorParameters = %L,\n", parameters(clazz.parameters))
         .add("instantiator = %L,\n", instantiator(clazz))
+        .apply { if (clazz.genericSupertypes.isNotEmpty()) add("genericSupertypes = %L,\n", clazz.genericSupertypes.map(::typeReference).asList()) }
         .add("⇤)")
         .build()
 

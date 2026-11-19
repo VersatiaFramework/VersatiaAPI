@@ -102,6 +102,7 @@ internal class BeanCollector(
             assignableTypes = described.assignableTypes,
             reachable = described.reachable,
             node = clazz,
+            genericSupertypes = described.genericSupertypes,
         )
     }
 

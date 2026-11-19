@@ -184,24 +184,25 @@ internal object BeanGraphValidator {
         private val BeanDeclaration.isPrototype get() = enhancements.any { it.processorClass == BeanProcessors.EXPOSE_PROTOTYPE }
 
         private fun List<BeanDeclaration>.describe() = joinToString { "\"${it.name}\" (${it.type.canonicalName})" }
-
-        private fun Collection<String>.quoted() = joinToString { "\"$it\"" }
     }
-
-    /** Every subset of [plugins], the empty one first; with more than [MAX_COMBINED] plugins only none and all. */
-    private fun combinationsOf(plugins: List<String>): List<Set<String>> =
-        if (plugins.size > MAX_COMBINED) listOf(emptySet(), plugins.toSet())
-        else (0 until (1 shl plugins.size)).map { mask -> plugins.filterIndexed { index, _ -> mask and (1 shl index) != 0 }.toSet() }
-
-    private const val MAX_COMBINED = 10
-
-    private val CONDITIONAL = ConditionalOnPlugin::class.asClassName()
-
-    private fun List<AnnotationRef>.requiredPlugins() =
-        filter { it.type == CONDITIONAL }.flatMap { it.arguments["value"] as? List<*> ?: emptyList() }.filterIsInstance<String>().toSet()
 
     private sealed interface Resolution {
         class Providers(val beans: List<BeanDeclaration>) : Resolution
         class Problem(val message: String) : Resolution
     }
 }
+
+/** Every subset of [plugins], the empty one first; with more than [MAX_COMBINED] plugins only none and all. */
+internal fun combinationsOf(plugins: List<String>): List<Set<String>> =
+    if (plugins.size > MAX_COMBINED) listOf(emptySet(), plugins.toSet())
+    else (0 until (1 shl plugins.size)).map { mask -> plugins.filterIndexed { index, _ -> mask and (1 shl index) != 0 }.toSet() }
+
+private const val MAX_COMBINED = 10
+
+private val CONDITIONAL = ConditionalOnPlugin::class.asClassName()
+
+/** The plugins the `@ConditionalOnPlugin` occurrences among these attributes name together. */
+internal fun List<AnnotationRef>.requiredPlugins() =
+    filter { it.type == CONDITIONAL }.flatMap { it.arguments["value"] as? List<*> ?: emptyList() }.filterIsInstance<String>().toSet()
+
+internal fun Collection<String>.quoted() = joinToString { "\"$it\"" }

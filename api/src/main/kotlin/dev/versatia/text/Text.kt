@@ -9,9 +9,10 @@ import org.bukkit.plugin.Plugin
 /**
  * Turns MiniMessage text with runtime [Argument]s into components: angle brackets are MiniMessage
  * formatting, braces are data. Every plugin gets its own instance by injecting this type: what it
- * registers with [present] and [tag] is visible to that plugin alone and disappears with it.
- * Registering and parsing are safe on any thread, but the built-in presentations read Bukkit state
- * (`{player.location}`, `{world.players}`), which is safe on the main thread only.
+ * registers with [present] and [tag] is visible to that plugin alone and disappears with it, while
+ * a [ServerPresentation] of any plugin applies to every instance. Registering and parsing are safe
+ * on any thread, but the built-in presentations read Bukkit state (`{player.location}`,
+ * `{world.players}`), which is safe on the main thread only.
  *
  * Besides MiniMessage's tags a text may use the server's styles: names the server maps to
  * MiniMessage in `plugins/VersatiaCore/styles.yml`, shared by every plugin and written as tags,
@@ -58,15 +59,18 @@ interface Text {
 
     /**
      * Teaches this instance how values of [type] appear in text. A value that is [Presentable]
-     * describes itself and wins; otherwise the registered type nearest to the value's class is
-     * used, the built-in ones last; this holds for strings and numbers too. Registering a
-     * type again replaces its presentation.
+     * describes itself first; then come the types nearest to the value's class among those
+     * registered here and those of the server's [ServerPresentation]s, the server's first for the
+     * same type, and the built-in ones last; this holds for strings and numbers too. A part a
+     * presentation does not define, the component, the style or a property, comes from the next
+     * one. Registering a type again replaces its presentation.
      *
      * [style] names the server's style the values are shown in, as [Presentable.style] does for a
      * class of your own: `present<Town>(style = "town")` makes `{town}` look like
-     * `<town>{town}</town>`. Without one, and where the server defines no style of that name, a
-     * value takes `accent`. A name that cannot be a style fails with an
-     * [InvalidStyleNameException].
+     * `<town>{town}</town>`. Without one the style of the next presentation applies, so a component
+     * of your own for `Player` still takes `player`; where none names a style, or the server
+     * defines no style of that name, a value takes `accent`. A name that cannot be a style fails
+     * with an [InvalidStyleNameException].
      */
     fun <T : Any> present(type: KClass<T>, style: String? = null, presenter: (T) -> Presentation)
 

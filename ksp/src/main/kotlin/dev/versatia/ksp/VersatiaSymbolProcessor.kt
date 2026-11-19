@@ -9,6 +9,7 @@ import dev.versatia.ksp.di.Injection
 import dev.versatia.ksp.lifecycle.FunctionCollector
 import dev.versatia.ksp.model.DescriptorGenerator
 import dev.versatia.ksp.model.DescriptorModel
+import dev.versatia.ksp.text.ServerPresentationCheck
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.processing.Dependencies
@@ -79,6 +80,7 @@ internal class VersatiaSymbolProcessor(private val environment: SymbolProcessorE
         val unprovidable = Unprovidable(sources, mainClass, resolver, enhancements)
         BeanGraphValidator.validate(beans, functions, plugin, subclasses.mapNotNull { it.clazz }.distinct(), pluginTypes, unprovidable::reasonFor)
             .forEach { reporter.fail(it.node, it.message) }
+        ServerPresentationCheck.validate(beans).forEach { reporter.fail(it.node, it.message) }
         if (reporter.hadErrors) return
 
         val packageName = mainClass.packageName.asString()
@@ -131,7 +133,7 @@ internal class VersatiaSymbolProcessor(private val environment: SymbolProcessorE
 
         private fun KSClassDeclaration.isExposed() = annotations.any { annotation ->
             val chain = enhancements.chainOf(annotation)
-            enhancements.inherits(chain, beanAnnotation) && enhancements.processorNamesOf(chain).any { it != BeanProcessors.LOCAL }
+            enhancements.inherits(chain, beanAnnotation) && enhancements.processorNamesOf(chain).any { it in BeanProcessors.SCOPES && it != BeanProcessors.LOCAL }
         }
     }
 
