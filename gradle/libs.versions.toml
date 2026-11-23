@@ -19,6 +19,14 @@ sqlite-jdbc = "3.49.1.0"
 mysql-connector = "9.2.0"
 testcontainers = "2.0.5"
 slf4j = "2.0.9"
+# Public plugins built on Versatia: InvUI windows, shaded and relocated into each plugin JAR by Shadow
+# (InvUI 2.4.0-2.5.x support Minecraft 26.3 only; its own repository, declared where it is used)
+invui = "2.5.2"
+shadow = "9.6.1"
+# The VaultUnlocked economy API, a soft dependency; its plugin is named Vault on the server
+vaultunlocked = "2.20"
+# Tests of plugins against a mocked Paper 26.3 server
+mockbukkit = "4.123.0"
 
 [libraries]
 paper-api = { module = "io.papermc.paper:paper-api", version.ref = "paper" }
@@ -40,9 +48,13 @@ sqlite-jdbc = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite-jdbc" }
 mysql-connector-j = { module = "com.mysql:mysql-connector-j", version.ref = "mysql-connector" }
 testcontainers-bom = { module = "org.testcontainers:testcontainers-bom", version.ref = "testcontainers" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
+invui = { module = "xyz.xenondevs.invui:invui", version.ref = "invui" }
+vaultunlocked-api = { module = "net.milkbowl.vault:VaultUnlockedAPI", version.ref = "vaultunlocked" }
+mockbukkit = { module = "org.mockbukkit.mockbukkit:mockbukkit-v26.3", version.ref = "mockbukkit" }
 # Version aligned by the JUnit BOM that kotlin("test") brings
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
